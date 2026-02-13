@@ -21,7 +21,7 @@ func _process(delta):
 	# LOGICA VISUAL UNIFICADA:
 	# Si está seleccionada O si la estoy arrastrando, se pone grande.
 	if seleccionado == true or arrastrando == true:
-		scale = Vector2(escalaX + Porcentaje(10, escalaX), escalaY + Porcentaje(10, escalaY)) #subirle el tamaño un poco cuando esta seleccionada
+		scale = Vector2(escalaX + Porcentaje(30, escalaX), escalaY + Porcentaje(30, escalaY)) #subirle el tamaño un poco cuando esta seleccionada
 		z_index = 1 # Traer al frente
 	else:
 		scale = Vector2(escalaX, escalaY) #volver a escala default
