@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cj33hyrtvso7u"
-path="res://.godot/imported/domino(blanco).png-92f8d1704a1eaf01ba1fc99db2fe02b0.ctex"
+uid="uid://b06escvji8pbv"
+path="res://.godot/imported/1-3.png-750ab77bc4b588ffb627595df2148b9d.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://_Art/domino(blanco).png"
-dest_files=["res://.godot/imported/domino(blanco).png-92f8d1704a1eaf01ba1fc99db2fe02b0.ctex"]
+source_file="res://_Art/1-3.png"
+dest_files=["res://.godot/imported/1-3.png-750ab77bc4b588ffb627595df2148b9d.ctex"]
 
 [params]
 

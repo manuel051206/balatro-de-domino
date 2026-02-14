@@ -1,0 +1,8 @@
+[gd_scene format=3 uid="uid://cdy887fyg17a7"]
+
+[ext_resource type="Script" uid="uid://dgmw6dp1o5k20" path="res://_Scenes/mi_mano.gd" id="1_xkj0r"]
+[ext_resource type="PackedScene" uid="uid://bff5ydu7g1erj" path="res://_Scenes/Ficha.tscn" id="2_1r63y"]
+
+[node name="MiMano" type="Node2D" unique_id=671859111]
+script = ExtResource("1_xkj0r")
+escena_ficha = ExtResource("2_1r63y")
