@@ -5,7 +5,7 @@
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_asnbu"]
 size = Vector2(64, 128)
 
-[node name="MiPrimerDomino" type="Area2D" unique_id=351979873]
+[node name="Ficha" type="Area2D" unique_id=351979873]
 script = ExtResource("1_8u3td")
 aumento_seleccion = 40.0
 
