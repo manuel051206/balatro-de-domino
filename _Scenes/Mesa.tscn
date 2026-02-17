@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://k0pv3b6i88b7"]
 
-[ext_resource type="Script" uid="uid://cafa887y0lv8j" path="res://_Scenes/Mesa.gd" id="1_8bmom"]
+[ext_resource type="Script" uid="uid://cafa887y0lv8j" path="res://_Scripts/Mesa.gd" id="1_8bmom"]
 [ext_resource type="PackedScene" uid="uid://cdy887fyg17a7" path="res://_Scenes/MiMano.tscn" id="1_v7eje"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_8bmom"]
