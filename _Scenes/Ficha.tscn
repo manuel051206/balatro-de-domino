@@ -8,6 +8,11 @@ size = Vector2(64, 128)
 [node name="Ficha" type="Area2D" unique_id=351979873]
 script = ExtResource("1_8u3td")
 aumento_seleccion = 40.0
+max_offset_sombra = 30.0
+
+[node name="Sombra" type="Sprite2D" parent="." unique_id=833167314]
+modulate = Color(0, 0, 0, 0.5882353)
+position = Vector2(0, 10)
 
 [node name="Sprite" type="Sprite2D" parent="." unique_id=1557434195]
 

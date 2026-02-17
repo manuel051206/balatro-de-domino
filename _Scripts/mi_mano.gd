@@ -1,5 +1,8 @@
 extends Node2D
 
+# --- SEÑALES --- 
+signal intento_de_jugada(ficha: Ficha)
+
 # --- CONFIGURACIÓN Y REFERENCIAS ---
 # 'escena_ficha': Es el molde (.tscn) que usaremos para crear copias de las fichas.
 @export var escena_ficha: PackedScene 
@@ -16,20 +19,30 @@ func _ready():
 	generar_mano_inicial()
 
 # --- GENERACIÓN DE FICHAS ---
-# Limpia la mesa y genera 7 fichas nuevas con valores aleatorios.
+# Limpia la mesa y genera 7 fichas ÚNICAS usando una "bolsa" mezclada.
 func generar_mano_inicial():
-	# 1. Limpieza: Borramos fichas anteriores visualmente y de la memoria.
+	# 1. Limpieza: Borramos fichas anteriores.
 	for hijo in get_children():
 		hijo.queue_free()
 	fichas_en_mano.clear()
 	ficha_seleccionada_actual = null 
 	
-	# 2. Creación: Generamos valores aleatorios (0-6).
-	for i in range(7):
-		var a = randi_range(0, 6)
-		var b = randi_range(0, 6)
-		# Usamos min/max para asegurar que siempre pedimos la imagen "0-1" y no "1-0".
-		crear_ficha(min(a,b), max(a,b))
+	# --- NUEVA LÓGICA: BOLSA DE DOMINÓ ---
+	var bolsa_de_fichas = []
+	
+	# A. Generamos las 28 fichas posibles (del 0-0 al 6-6)
+	# Usamos dos bucles para crear pares únicos (0-0, 0-1... hasta 6-6)
+	for i in range(7):      # i va de 0 a 6
+		for j in range(i, 7): # j va de i a 6 (evita repetir 1-0 si ya existe 0-1)
+			bolsa_de_fichas.append([i, j])
+	
+	# B. Barajamos la bolsa (Shuffle)
+	bolsa_de_fichas.shuffle()
+	
+	# C. Sacamos las primeras 7 fichas de la bolsa mezclada
+	for k in range(7):
+		var datos = bolsa_de_fichas[k] # Obtenemos el par [a, b]
+		crear_ficha(datos[0], datos[1])
 	
 	# 3. Orden: Una vez creadas, las acomodamos en pantalla.
 	organizar_mano()
@@ -52,6 +65,8 @@ func crear_ficha(v1: int, v2: int):
 	nueva_ficha.click_en_ficha.connect(_on_ficha_click)
 	# 2. empezando_interaccion: Apenas el jugador pone el dedo encima (presionar).
 	nueva_ficha.empezando_interaccion.connect(_on_ficha_interactuada)
+	# 3. Cuando la ficha grite "me soltaron", ejecutamos una función local
+	nueva_ficha.ficha_soltada.connect(_on_ficha_soltada_drag)
 
 # --- MATEMÁTICAS DE POSICIONAMIENTO ---
 # Calcula la posición de cada ficha para centrarlas respecto a la Cámara (0,0).
@@ -101,3 +116,7 @@ func _on_ficha_click(ficha_tocada: Ficha):
 	# Encendemos la nueva
 	ficha_tocada.seleccionar()
 	ficha_seleccionada_actual = ficha_tocada
+
+# Esta función recibe el aviso de la ficha y lo retransmite hacia arriba (al Main)
+func _on_ficha_soltada_drag(ficha: Ficha):
+	intento_de_jugada.emit(ficha)

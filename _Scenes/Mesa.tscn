@@ -1,9 +1,34 @@
 [gd_scene format=3 uid="uid://k0pv3b6i88b7"]
 
+[ext_resource type="Script" uid="uid://cafa887y0lv8j" path="res://_Scenes/Mesa.gd" id="1_8bmom"]
 [ext_resource type="PackedScene" uid="uid://cdy887fyg17a7" path="res://_Scenes/MiMano.tscn" id="1_v7eje"]
 
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_8bmom"]
+size = Vector2(1074, 415)
+
 [node name="Mesa" type="Node2D" unique_id=1649123061]
+script = ExtResource("1_8bmom")
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=951271532]
 
 [node name="MiMano" parent="." unique_id=671859111 instance=ExtResource("1_v7eje")]
+
+[node name="ZonaMesa" type="Area2D" parent="." unique_id=1391056691]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ZonaMesa" unique_id=471383918]
+position = Vector2(0, -83.5)
+shape = SubResource("RectangleShape2D_8bmom")
+
+[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=855013801]
+
+[node name="PuntajeLabel" type="Label" parent="CanvasLayer" unique_id=1296974693]
+offset_left = 50.0
+offset_top = 50.0
+offset_right = 83.0
+offset_bottom = 128.0
+theme_override_font_sizes/font_size = 57
+text = "0"
+
+[connection signal="input_event" from="ZonaMesa" to="." method="_on_zona_mesa_input_event"]
+[connection signal="mouse_entered" from="ZonaMesa" to="." method="_on_zona_mesa_mouse_entered"]
+[connection signal="mouse_exited" from="ZonaMesa" to="." method="_on_zona_mesa_mouse_exited"]
