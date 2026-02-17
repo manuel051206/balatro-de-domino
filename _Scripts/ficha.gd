@@ -120,7 +120,7 @@ func _input_event(_viewport, event, _shape_idx):
 			
 			empezando_interaccion.emit(self)
 			animar_escala(escala_base * 1.05) 
-
+# test
 		else:
 			arrastrando = false
 			z_index = 10 if seleccionado else 0 
