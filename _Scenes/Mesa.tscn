@@ -2,12 +2,28 @@
 
 [ext_resource type="Script" uid="uid://cafa887y0lv8j" path="res://_Scripts/Mesa.gd" id="1_8bmom"]
 [ext_resource type="PackedScene" uid="uid://cdy887fyg17a7" path="res://_Scenes/MiMano.tscn" id="1_v7eje"]
+[ext_resource type="AudioStream" uid="uid://xnd3mdnhotr5" path="res://_Sounds/SFX_PonerFicha/SFX_PonerFicha_01.wav" id="2_u6qwb"]
+[ext_resource type="AudioStream" uid="uid://cmac07d106b43" path="res://_Sounds/SFX_PonerFicha/SFX_PonerFicha_02.wav" id="3_pilx5"]
+[ext_resource type="AudioStream" uid="uid://bg85b47ue6cpk" path="res://_Sounds/SFX_PonerFicha/SFX_PonerFicha_03.wav" id="4_sat11"]
+[ext_resource type="AudioStream" uid="uid://djlpck8mhudbs" path="res://_Sounds/SFX_PonerFicha/SFX_PonerFicha_04.wav" id="5_2w1jv"]
+[ext_resource type="AudioStream" uid="uid://clx1glvs7kpfg" path="res://_Sounds/SFX_PonerFicha/SFX_PonerFicha_05.wav" id="6_sk7d2"]
+[ext_resource type="AudioStream" uid="uid://pb2ptwhaofy0" path="res://_Sounds/SFX_PonerFicha/SFX_PonerFicha_06.wav" id="7_k7sko"]
+
+[sub_resource type="AudioStreamRandomizer" id="AudioStreamRandomizer_n8kvq"]
+streams_count = 6
+stream_0/stream = ExtResource("2_u6qwb")
+stream_1/stream = ExtResource("3_pilx5")
+stream_2/stream = ExtResource("4_sat11")
+stream_3/stream = ExtResource("5_2w1jv")
+stream_4/stream = ExtResource("6_sk7d2")
+stream_5/stream = ExtResource("7_k7sko")
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_8bmom"]
 size = Vector2(1074, 415)
 
 [node name="Mesa" type="Node2D" unique_id=1649123061]
 script = ExtResource("1_8bmom")
+Sfx_PonerFicha = SubResource("AudioStreamRandomizer_n8kvq")
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=951271532]
 
@@ -28,6 +44,8 @@ offset_right = 83.0
 offset_bottom = 128.0
 theme_override_font_sizes/font_size = 57
 text = "0"
+
+[node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="." unique_id=673113965]
 
 [connection signal="input_event" from="ZonaMesa" to="." method="_on_zona_mesa_input_event"]
 [connection signal="mouse_entered" from="ZonaMesa" to="." method="_on_zona_mesa_mouse_entered"]

@@ -1,6 +1,36 @@
 [gd_scene format=3 uid="uid://bff5ydu7g1erj"]
 
 [ext_resource type="Script" uid="uid://bd3jylw7fsvgi" path="res://_Scripts/ficha.gd" id="1_8u3td"]
+[ext_resource type="AudioStream" uid="uid://cy4fe68mbjj71" path="res://_Sounds/SFX_SeleccionarFicha/SFX_SeleccionarFicha_01.wav" id="2_031e6"]
+[ext_resource type="AudioStream" uid="uid://dyek2ep7hw5h7" path="res://_Sounds/SFX_SeleccionarFicha/SFX_SeleccionarFicha_02.wav" id="3_yo66h"]
+[ext_resource type="AudioStream" uid="uid://b2lt5m7qh6ckn" path="res://_Sounds/SFX_SeleccionarFicha/SFX_SeleccionarFicha_03.wav" id="4_7lf4t"]
+[ext_resource type="AudioStream" uid="uid://bk6cl8gwklqh2" path="res://_Sounds/SFX_SeleccionarFicha/SFX_SeleccionarFicha_04.wav" id="5_ewtln"]
+[ext_resource type="AudioStream" uid="uid://qx7778nnqgtc" path="res://_Sounds/SFX_SeleccionarFicha/SFX_SeleccionarFicha_05.wav" id="6_ahac4"]
+[ext_resource type="AudioStream" uid="uid://by8sjxia7tpje" path="res://_Sounds/SFX_DeseleccionarFicha/SFX_DeseleccionarFicha_01.wav" id="7_rx847"]
+[ext_resource type="AudioStream" uid="uid://dc8l5l71sj526" path="res://_Sounds/SFX_DeseleccionarFicha/SFX_DeseleccionarFicha_02.wav" id="8_8t6fj"]
+[ext_resource type="AudioStream" uid="uid://b38ky1wnsq21k" path="res://_Sounds/SFX_DeseleccionarFicha/SFX_DeseleccionarFicha_03.wav" id="9_hy724"]
+[ext_resource type="AudioStream" uid="uid://bubn54yboq125" path="res://_Sounds/SFX_DeseleccionarFicha/SFX_DeseleccionarFicha_04.wav" id="10_6e55o"]
+[ext_resource type="AudioStream" uid="uid://d0itahl0k7f4u" path="res://_Sounds/SFX_DeseleccionarFicha/SFX_DeseleccionarFicha_05.wav" id="11_pxtlj"]
+[ext_resource type="AudioStream" uid="uid://dalv6vic8xlvr" path="res://_Sounds/SFX_DeseleccionarFicha/SFX_DeseleccionarFicha_06.wav" id="12_2oyfj"]
+[ext_resource type="AudioStream" uid="uid://cgub4lrlakn7o" path="res://_Sounds/SFX_DeseleccionarFicha/SFX_DeseleccionarFicha_07.wav" id="13_lap3h"]
+
+[sub_resource type="AudioStreamRandomizer" id="AudioStreamRandomizer_ffkru"]
+streams_count = 6
+stream_0/stream = ExtResource("2_031e6")
+stream_1/stream = ExtResource("3_yo66h")
+stream_2/stream = ExtResource("4_7lf4t")
+stream_3/stream = ExtResource("5_ewtln")
+stream_4/stream = ExtResource("6_ahac4")
+
+[sub_resource type="AudioStreamRandomizer" id="AudioStreamRandomizer_4ohet"]
+streams_count = 7
+stream_0/stream = ExtResource("7_rx847")
+stream_1/stream = ExtResource("8_8t6fj")
+stream_2/stream = ExtResource("9_hy724")
+stream_3/stream = ExtResource("10_6e55o")
+stream_4/stream = ExtResource("11_pxtlj")
+stream_5/stream = ExtResource("12_2oyfj")
+stream_6/stream = ExtResource("13_lap3h")
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_asnbu"]
 size = Vector2(64, 128)
@@ -9,6 +39,8 @@ size = Vector2(64, 128)
 script = ExtResource("1_8u3td")
 aumento_seleccion = 40.0
 max_offset_sombra = 30.0
+SFX_SeleccionarFicha = SubResource("AudioStreamRandomizer_ffkru")
+SFX_DeseleccionarFicha = SubResource("AudioStreamRandomizer_4ohet")
 
 [node name="Sombra" type="Sprite2D" parent="." unique_id=833167314]
 modulate = Color(0, 0, 0, 0.5882353)
@@ -18,3 +50,5 @@ position = Vector2(0, 10)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1994391501]
 shape = SubResource("RectangleShape2D_asnbu")
+
+[node name="AudioStreamPlayer2D" type="AudioStreamPlayer2D" parent="." unique_id=1827908534]

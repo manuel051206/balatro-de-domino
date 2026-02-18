@@ -10,6 +10,12 @@ signal ficha_soltada(ficha: Ficha)
 @export var aumento_seleccion: float = 20.0 
 @export var max_offset_sombra: float = 10.0 
 
+# --- CONFIGURACIÓN SONORA ---
+@export var SFX_SeleccionarFicha = AudioStream
+@export var SFX_DeseleccionarFicha = AudioStream
+@onready var reproductor = $AudioStreamPlayer2D
+
+
 # --- ESTADO ---
 var valor_izq: int = -1
 var valor_der: int = -1
@@ -92,12 +98,16 @@ func seleccionar():
 	seleccionado = true
 	z_index = 10 
 	animar_escala(escala_base * (1 + (aumento_seleccion/100.0)))
+	reproductor.stream = SFX_SeleccionarFicha
+	reproductor.play()
 
 func deseleccionar():
 	if jugada: return
 	seleccionado = false
 	z_index = 0
 	animar_escala(escala_base)
+	reproductor.stream = SFX_DeseleccionarFicha
+	reproductor.play()
 
 func animar_escala(objetivo: Vector2):
 	if tween_actual and tween_actual.is_running():

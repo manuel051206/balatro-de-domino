@@ -3,11 +3,16 @@ extends Node2D
 # --- REFERENCIAS ---
 @onready var mano = $MiMano 
 @onready var label_puntos = $CanvasLayer/PuntajeLabel
+@onready var reproductor = $AudioStreamPlayer
+
 
 # --- CONFIGURACIÓN VISUAL ---
 var ancho_ficha: float = 50.0 
 var alto_ficha: float = 97.0 
 var separacion: float = 0.0
+
+# --- CONFIGURACIÓN SONORA ---
+@export var Sfx_PonerFicha = AudioStream
 
 # --- ESTADO DEL JUEGO (DATOS) ---
 var extremo_izquierdo: int = -1
@@ -142,8 +147,16 @@ func finalizar_jugada(ficha: Ficha):
 	if label_puntos:
 		label_puntos.text = "Puntos en Mesa: %d" % suma_total_puntos
 	
+	
 	# Limpieza de referencia (tu código anterior)
 	if mano.ficha_seleccionada_actual == ficha:
 		mano.ficha_seleccionada_actual = null
+	
+		# --- SONIDO: PONER FICHA ---
+	reproductor.stream = Sfx_PonerFicha
+	# Pequeña variación de tono para realismo
+	reproductor.pitch_scale = randf_range(0.95, 1.05)
+	reproductor.play()
+	
 		
 	print("MESA ACTUAL: ", extremo_izquierdo, " ... ", extremo_derecho)
