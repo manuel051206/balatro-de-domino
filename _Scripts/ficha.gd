@@ -21,6 +21,7 @@ var valor_izq: int = -1
 var valor_der: int = -1
 var seleccionado: bool = false
 var posicionDefault: Vector2 = Vector2.ZERO 
+var en_animacion_especial: bool = false
 
 # Variable NUEVA: Bloqueo de ficha jugada
 var jugada: bool = false 
@@ -48,6 +49,15 @@ func setup(v1, v2, tex):
 
 # --- BUCLE FÍSICO ---
 func _process(delta):
+	
+	# NUEVO: Si la mesa está animando esta ficha, detenemos las físicas automáticas
+	if en_animacion_especial:
+		return 
+
+	# Si la ficha ya está jugada, solo nos aseguramos de que llegue a su sitio...
+	if jugada:
+		global_position = global_position.lerp(posicionDefault, 25.0 * delta)
+		return
 	# Si la ficha ya está jugada, solo nos aseguramos de que llegue a su sitio
 	# pero NO calculamos sombras ni inputs.
 	if jugada:

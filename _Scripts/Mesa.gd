@@ -11,6 +11,9 @@ var ancho_ficha: float = 50.0
 var alto_ficha: float = 97.0 
 var separacion: float = 0.0
 
+# --- MODIFICADORES DE PUNTAJE (Power-ups / Reliquias) ---
+@export var multiplicador_capicua: int = 3
+
 # --- CONFIGURACIÓN SONORA ---
 @export var Sfx_PonerFicha = AudioStream
 
@@ -54,43 +57,72 @@ func _on_zona_mesa_input_event(_viewport, event, _shape_idx):
 
 
 # --- ÁRBITRO: ¿ES LEGAL LA JUGADA? ---
+# --- ÁRBITRO: ¿ES LEGAL LA JUGADA? ---
+# --- ÁRBITRO: ¿ES LEGAL LA JUGADA? ---
 func _validar_jugada(ficha: Ficha):
 	
-	# RESTRICCIÓN 1: ¿Estamos jugando sobre la mesa?
-	# Si se intentó jugar arrastrando (drag & drop), verificamos dónde está el mouse.
-	# (Si fue por clic directo, mouse_sobre_mesa ya será true).
 	if not mouse_sobre_mesa:
 		print("Jugada cancelada: Ficha soltada fuera de la mesa.")
-		# No hacemos nada, la ficha volverá a la mano sola.
 		return
 
 	print("Analizando ficha: ", ficha.valor_izq, "-", ficha.valor_der)
 	
-	# REGLA 2: Primer turno
 	if es_primer_turno:
 		print("¡Primera jugada aceptada!")
 		jugar_ficha(ficha, "centro")
 		return
 
-	# REGLA 3: Izquierda
-	if ficha.valor_der == extremo_izquierdo or ficha.valor_izq == extremo_izquierdo:
-		print("¡Conecta por la Izquierda!")
-		jugar_ficha(ficha, "izquierda")
+	# 1. Evaluamos DE QUÉ LADO soltó el jugador la ficha
+	var posicion_mouse_x = get_local_mouse_position().x
+	var intencion_izquierda = (posicion_mouse_x < 0)
+	
+	# 2. Evaluamos DÓNDE cabe legalmente
+	var cabe_izq = (ficha.valor_der == extremo_izquierdo or ficha.valor_izq == extremo_izquierdo)
+	var cabe_der = (ficha.valor_izq == extremo_derecho or ficha.valor_der == extremo_derecho)
+	var es_capicua = (cabe_izq and cabe_der)
+
+	# 3. LÓGICA DE CAPICÚA
+	if es_capicua:
+		print("¡CAPICÚA! Bono activado.")
+		# Decidimos el lado basándonos en dónde soltó el mouse el jugador y activamos el bono (true)
+		if intencion_izquierda:
+			print("Capicúa jugada a la Izquierda por elección del jugador.")
+			jugar_ficha(ficha, "izquierda", true)
+		else:
+			print("Capicúa jugada a la Derecha por elección del jugador.")
+			jugar_ficha(ficha, "derecha", true)
 		return
 
-	# REGLA 4: Derecha
-	if ficha.valor_izq == extremo_derecho or ficha.valor_der == extremo_derecho:
-		print("¡Conecta por la Derecha!")
+	# 4. LÓGICA NORMAL (No es capicúa)
+	if intencion_izquierda and cabe_izq:
+		print("¡Conecta por la Izquierda (Intención respetada)!")
+		jugar_ficha(ficha, "izquierda")
+		return
+	elif not intencion_izquierda and cabe_der:
+		print("¡Conecta por la Derecha (Intención respetada)!")
+		jugar_ficha(ficha, "derecha")
+		return
+		
+	# 5. AUTO-CORRECCIÓN AMIGABLE (Quality of Life)
+	if cabe_izq:
+		print("¡Conecta por la Izquierda (Auto-corregido)!")
+		jugar_ficha(ficha, "izquierda")
+		return
+	if cabe_der:
+		print("¡Conecta por la Derecha (Auto-corregido)!")
 		jugar_ficha(ficha, "derecha")
 		return
 	
 	print("Jugada ILEGAL: Números no coinciden. Vuelve a la mano.")
-
-# --- VISUALIZADOR (RESTO DEL CÓDIGO IGUAL QUE ANTES) ---
-func jugar_ficha(ficha: Ficha, lado: String):
 	
+		# --- VISUALIZADOR (RESTO DEL CÓDIGO IGUAL QUE ANTES) ---
+	
+func jugar_ficha(ficha: Ficha, lado: String, es_capicua: bool = false):
 	var es_doble = (ficha.valor_izq == ficha.valor_der)
 	var ancho_ocupado_por_esta_ficha = ancho_ficha if es_doble else alto_ficha
+	
+	var pos_final: Vector2
+	var pos_rebote: Vector2 # Guardará la coordenada del lado contrario para el rebote
 	
 	if es_primer_turno:
 		extremo_izquierdo = ficha.valor_izq
@@ -115,8 +147,13 @@ func jugar_ficha(ficha: Ficha, lado: String):
 			else:
 				ficha.rotation_degrees = 90
 				extremo_izquierdo = ficha.valor_der
+		
+		# Calculamos dónde va a quedar
 		var nueva_x = borde_izquierdo_x - (ancho_ocupado_por_esta_ficha / 2.0) - separacion
-		ficha.posicionDefault = Vector2(nueva_x, 0)
+		pos_final = Vector2(nueva_x, 0)
+		# Calculamos el rebote visual en la derecha
+		pos_rebote = Vector2(borde_derecho_x + (ancho_ocupado_por_esta_ficha / 2.0) + separacion, 0)
+		
 		borde_izquierdo_x -= (ancho_ocupado_por_esta_ficha + separacion)
 
 	elif lado == "derecha":
@@ -130,33 +167,86 @@ func jugar_ficha(ficha: Ficha, lado: String):
 			else:
 				ficha.rotation_degrees = 90
 				extremo_derecho = ficha.valor_izq
+				
 		var nueva_x = borde_derecho_x + (ancho_ocupado_por_esta_ficha / 2.0) + separacion
-		ficha.posicionDefault = Vector2(nueva_x, 0)
+		pos_final = Vector2(nueva_x, 0)
+		# Calculamos el rebote visual en la izquierda
+		pos_rebote = Vector2(borde_izquierdo_x - (ancho_ocupado_por_esta_ficha / 2.0) - separacion, 0)
+		
 		borde_derecho_x += (ancho_ocupado_por_esta_ficha + separacion)
 
-	finalizar_jugada(ficha)
+	# --- BIFURCACIÓN DE ANIMACIÓN ---
+	if es_capicua:
+		_animar_rebote_capicua(ficha, pos_final, pos_rebote)
+	else:
+		ficha.posicionDefault = pos_final
+		finalizar_jugada(ficha, false)
 
-func finalizar_jugada(ficha: Ficha):
+
+func finalizar_jugada(ficha: Ficha, es_capicua: bool = false):
 	ficha.bloquear()
-	# 1. SUMA MATEMÁTICA
-	# Sumamos los dos lados de la ficha colocada al total
-	suma_total_puntos += (ficha.valor_izq + ficha.valor_der)
 	
-	# 2. ACTUALIZAR INTERFAZ
-	# Convertimos el número a texto y lo mostramos
+	# --- 1. MOTOR DE PUNTUACIÓN ---
+	# Calculamos los puntos base (la suma de los números de la ficha jugada)
+	var puntos_base = ficha.valor_izq + ficha.valor_der
+	var puntos_a_sumar = puntos_base
+	
+	# Aplicamos modificadores si corresponde
+	if es_capicua:
+		puntos_a_sumar = puntos_base * multiplicador_capicua
+		print("🔥 ¡BONO CAPICÚA! Puntos base: ", puntos_base, " x ", multiplicador_capicua, " = ", puntos_a_sumar)
+		
+		# [Espacio reservado: Aquí luego llamaremos a la animación de la ficha rebotando]
+	
+	# Añadimos al banco total
+	suma_total_puntos += puntos_a_sumar
+	
+	# --- 2. ACTUALIZAR INTERFAZ ---
 	if label_puntos:
 		label_puntos.text = "Puntos en Mesa: %d" % suma_total_puntos
 	
-	
-	# Limpieza de referencia (tu código anterior)
+	# --- 3. LIMPIEZA Y SONIDO ---
 	if mano.ficha_seleccionada_actual == ficha:
 		mano.ficha_seleccionada_actual = null
 	
-		# --- SONIDO: PONER FICHA ---
 	reproductor.stream = Sfx_PonerFicha
-	# Pequeña variación de tono para realismo
 	reproductor.pitch_scale = randf_range(0.95, 1.05)
 	reproductor.play()
 	
-		
 	print("MESA ACTUAL: ", extremo_izquierdo, " ... ", extremo_derecho)
+
+	
+func _animar_rebote_capicua(ficha: Ficha, pos_final: Vector2, pos_rebote: Vector2):
+	# 1. Preparamos la ficha para que no interfiera el _process
+	ficha.arrastrando = false
+	ficha.en_animacion_especial = true
+	ficha.z_index = 20 # Para que pase por encima de las demás durante el rebote
+	
+	# 2. Creamos la secuencia (Tween)
+	var tween = create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	
+	var tiempo_golpe = 0.25 # Qué tan rápido viaja
+	
+	# GOLPE 1: Va al lado elegido
+	tween.tween_property(ficha, "global_position", pos_final, tiempo_golpe)
+	tween.tween_callback(_reproducir_sonido_rebote)
+	
+	# GOLPE 2: Viaja cruzando toda la mesa hasta el otro extremo
+	tween.tween_property(ficha, "global_position", pos_rebote, tiempo_golpe * 1.5) # Un poco más lento porque recorre más distancia
+	tween.tween_callback(_reproducir_sonido_rebote)
+	
+	# GOLPE 3: Vuelve al lado original
+	tween.tween_property(ficha, "global_position", pos_final, tiempo_golpe * 1.5)
+	
+	# FINAL: Restablece estados y finaliza la jugada sumando el bono
+	tween.tween_callback(func():
+		ficha.en_animacion_especial = false
+		ficha.posicionDefault = pos_final
+		finalizar_jugada(ficha, true) # true = es capicua, aplica el bono
+	)
+
+func _reproducir_sonido_rebote():
+	# Reutilizamos el sonido de poner ficha, pero con un tono agudo para que suene a "rebote"
+	reproductor.stream = Sfx_PonerFicha
+	reproductor.pitch_scale = randf_range(1.3, 1.5)
+	reproductor.play()
