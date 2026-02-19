@@ -6,3 +6,4 @@
 [node name="MiMano" type="Node2D" unique_id=671859111]
 script = ExtResource("1_xkj0r")
 escena_ficha = ExtResource("2_1r63y")
+carpeta_imagenes = "res://_art//Basico"
