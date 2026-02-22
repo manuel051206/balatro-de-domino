@@ -8,6 +8,7 @@
 [ext_resource type="AudioStream" uid="uid://djlpck8mhudbs" path="res://_Sounds/SFX_PonerFicha/SFX_PonerFicha_04.wav" id="5_2w1jv"]
 [ext_resource type="AudioStream" uid="uid://clx1glvs7kpfg" path="res://_Sounds/SFX_PonerFicha/SFX_PonerFicha_05.wav" id="6_sk7d2"]
 [ext_resource type="AudioStream" uid="uid://pb2ptwhaofy0" path="res://_Sounds/SFX_PonerFicha/SFX_PonerFicha_06.wav" id="7_k7sko"]
+[ext_resource type="Texture2D" uid="uid://4xjfp3yf8qss" path="res://_Art/pot (PROVISIONAL).png" id="9_pilx5"]
 
 [sub_resource type="AudioStreamRandomizer" id="AudioStreamRandomizer_n8kvq"]
 streams_count = 6
@@ -47,6 +48,20 @@ text = "0"
 
 [node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="." unique_id=673113965]
 
+[node name="CanvasLayer2" type="CanvasLayer" parent="." unique_id=1628599400]
+
+[node name="BotonPozo" type="TextureButton" parent="CanvasLayer2" unique_id=1665462798]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -250.0
+offset_bottom = 250.0
+grow_horizontal = 0
+texture_normal = ExtResource("9_pilx5")
+ignore_texture_size = true
+stretch_mode = 4
+
 [connection signal="input_event" from="ZonaMesa" to="." method="_on_zona_mesa_input_event"]
 [connection signal="mouse_entered" from="ZonaMesa" to="." method="_on_zona_mesa_mouse_entered"]
 [connection signal="mouse_exited" from="ZonaMesa" to="." method="_on_zona_mesa_mouse_exited"]
+[connection signal="pressed" from="CanvasLayer2/BotonPozo" to="." method="_on_boton_pozo_pressed"]

@@ -12,8 +12,10 @@ signal intento_de_jugada(ficha: Ficha)
 # --- ESTADO DE LA MANO ---
 # 'fichas_en_mano': Lista para llevar el control de los objetos creados.
 # 'ficha_seleccionada_actual': Referencia única para saber cuál ficha está activa.
+# pozo_de_fichas': Aquí guardaremos las fichas que no se han repartido
 var fichas_en_mano: Array = []
 var ficha_seleccionada_actual: Ficha = null
+var pozo_de_fichas: Array = []
 
 func _ready():
 	generar_mano_inicial()
@@ -21,35 +23,34 @@ func _ready():
 # --- GENERACIÓN DE FICHAS ---
 # Limpia la mesa y genera 7 fichas ÚNICAS usando una "bolsa" mezclada.
 func generar_mano_inicial():
-	# 1. Limpieza: Borramos fichas anteriores.
+	# 1. Limpieza
 	for hijo in get_children():
 		hijo.queue_free()
 	fichas_en_mano.clear()
 	ficha_seleccionada_actual = null 
+	pozo_de_fichas.clear() # Limpiamos el pozo por si estamos reiniciando el juego
 	
-	# --- NUEVA LÓGICA: BOLSA DE DOMINÓ ---
-	var bolsa_de_fichas = []
+	# 2. Llenar el pozo con las 28 fichas posibles
+	for i in range(7):
+		for j in range(i, 7):
+			pozo_de_fichas.append([i, j])
 	
-	# A. Generamos las 28 fichas posibles (del 0-0 al 6-6)
-	# Usamos dos bucles para crear pares únicos (0-0, 0-1... hasta 6-6)
-	for i in range(7):      # i va de 0 a 6
-		for j in range(i, 7): # j va de i a 6 (evita repetir 1-0 si ya existe 0-1)
-			bolsa_de_fichas.append([i, j])
+	# 3. Barajamos el pozo
+	pozo_de_fichas.shuffle()
 	
-	# B. Barajamos la bolsa (Shuffle)
-	bolsa_de_fichas.shuffle()
-	
-	# C. Sacamos las primeras 7 fichas de la bolsa mezclada
+	# 4. Repartimos las primeras 7 fichas
 	for k in range(7):
-		var datos = bolsa_de_fichas[k] # Obtenemos el par [a, b]
+		# pop_back() hace dos cosas a la vez: lee el último elemento de la lista, y lo BORRA de la lista.
+		# Así nos aseguramos de que esa ficha ya no esté en el pozo.
+		var datos = pozo_de_fichas.pop_back() 
 		crear_ficha(datos[0], datos[1])
 	
-	# 3. Orden: Una vez creadas, las acomodamos en pantalla.
+	# 5. Ordenar visualmente
 	organizar_mano()
 
 # --- FÁBRICA DE FICHAS ---
 # Instancia la ficha, carga su textura dinámica y conecta las señales.
-func crear_ficha(v1: int, v2: int):
+func crear_ficha(v1: int, v2: int) -> Ficha:
 	var nueva_ficha = escena_ficha.instantiate()
 	add_child(nueva_ficha)
 	fichas_en_mano.append(nueva_ficha)
@@ -67,6 +68,8 @@ func crear_ficha(v1: int, v2: int):
 	nueva_ficha.empezando_interaccion.connect(_on_ficha_interactuada)
 	# 3. Cuando la ficha grite "me soltaron", ejecutamos una función local
 	nueva_ficha.ficha_soltada.connect(_on_ficha_soltada_drag)
+	
+	return nueva_ficha
 
 # --- MATEMÁTICAS DE POSICIONAMIENTO ---
 # Calcula la posición de cada ficha para centrarlas respecto a la Cámara (0,0).
@@ -86,7 +89,6 @@ func organizar_mano():
 		# Asignamos su posición ideal (posicionDefault) para que la ficha sepa dónde volver
 		var pos_x = inicio_x + (i * separacion_fichas)
 		ficha.posicionDefault = Vector2(pos_x, altura_y)
-		ficha.position = ficha.posicionDefault
 
 # --- LÓGICA DE CONTROL Y SELECCIÓN ---
 
@@ -120,3 +122,50 @@ func _on_ficha_click(ficha_tocada: Ficha):
 # Esta función recibe el aviso de la ficha y lo retransmite hacia arriba (al Main)
 func _on_ficha_soltada_drag(ficha: Ficha):
 	intento_de_jugada.emit(ficha)
+	
+# --- ROBAR DEL POZO ANIMADO ---
+# Ahora recibe la coordenada desde donde debe salir volando
+func robar_del_pozo(posicion_origen: Vector2):
+	if pozo_de_fichas.is_empty():
+		print("El pozo está vacío. ¡No hay más huesos!")
+		return 
+
+	var datos = pozo_de_fichas.pop_back()
+	
+	# 1. Creamos la ficha y la guardamos en una variable
+	var nueva_ficha = crear_ficha(datos[0], datos[1])
+	
+	# 2. Preparativos iniciales
+	nueva_ficha.global_position = posicion_origen # Nace en el botón
+	nueva_ficha.scale = Vector2(0.1, 0.1)         # Nace chiquitita
+	nueva_ficha.en_animacion_especial = true      # Pausamos sus físicas automáticas
+	
+	# 3. Organizamos la mano (Esto le calcula su "posicionDefault" a donde debe ir)
+	organizar_mano()
+	
+	# 4. ¡ACCIÓN! Creamos el Tween paralelo
+	var tween = create_tween().set_parallel(true)
+	
+	# A. Animamos el viaje (TRANS_BACK hace que se pase un poquito y vuelva, como un rebote)
+	tween.tween_property(nueva_ficha, "global_position", nueva_ficha.posicionDefault, 0.4).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	
+	# B. Animamos el crecimiento (TRANS_ELASTIC para que "salte" visualmente)
+	tween.tween_property(nueva_ficha, "scale", nueva_ficha.escala_base, 0.5).set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)
+	
+	# 5. Cuando todo termine, desbloqueamos la ficha
+	tween.chain().tween_callback(func():
+		nueva_ficha.en_animacion_especial = false
+	)
+	
+	print("Robaste la ficha: ", datos[0], "-", datos[1])
+	
+	# 5. DEBUG: Mensajes útiles para la consola
+	print("Robaste la ficha: ", datos[0], "-", datos[1])
+	print("Fichas restantes en el pozo: ", pozo_de_fichas.size())
+	
+# --- OLVIDAR FICHA JUGADA ---
+func quitar_ficha_jugada(ficha: Ficha):
+	# Borramos la ficha de nuestra lista interna
+	fichas_en_mano.erase(ficha)
+	# Reacomodamos la mano para cerrar el hueco que dejó
+	organizar_mano()
