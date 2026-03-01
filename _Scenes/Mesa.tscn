@@ -25,6 +25,7 @@ size = Vector2(1074, 415)
 [node name="Mesa" type="Node2D" unique_id=1649123061]
 script = ExtResource("1_8bmom")
 Sfx_PonerFicha = SubResource("AudioStreamRandomizer_n8kvq")
+modo_debug = false
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=951271532]
 
@@ -39,6 +40,7 @@ shape = SubResource("RectangleShape2D_8bmom")
 [node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=855013801]
 
 [node name="PuntajeLabel" type="Label" parent="CanvasLayer" unique_id=1296974693]
+z_index = -1
 offset_left = 50.0
 offset_top = 50.0
 offset_right = 83.0
@@ -46,11 +48,29 @@ offset_bottom = 128.0
 theme_override_font_sizes/font_size = 57
 text = "0"
 
+[node name="ObjetivoLabel" type="Label" parent="CanvasLayer" unique_id=977628547]
+offset_right = 102.0
+offset_bottom = 23.0
+theme_override_font_sizes/font_size = 24
+text = "Objetivo: 150"
+
+[node name="RondaLabel" type="Label" parent="CanvasLayer" unique_id=923646755]
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_top = -11.5
+offset_right = 40.0
+offset_bottom = 11.5
+grow_vertical = 2
+theme_override_font_sizes/font_size = 32
+text = "Ronda: 1/3"
+
 [node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="." unique_id=673113965]
 
 [node name="CanvasLayer2" type="CanvasLayer" parent="." unique_id=1628599400]
 
 [node name="BotonPozo" type="TextureButton" parent="CanvasLayer2" unique_id=1665462798]
+z_index = -1
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
@@ -61,7 +81,17 @@ texture_normal = ExtResource("9_pilx5")
 ignore_texture_size = true
 stretch_mode = 4
 
+[node name="BotonSiguienteRonda" type="Button" parent="CanvasLayer2" unique_id=219170049]
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_top = -98.0
+offset_right = 266.0
+grow_vertical = 0
+text = "Terminar Ronda"
+
 [connection signal="input_event" from="ZonaMesa" to="." method="_on_zona_mesa_input_event"]
 [connection signal="mouse_entered" from="ZonaMesa" to="." method="_on_zona_mesa_mouse_entered"]
 [connection signal="mouse_exited" from="ZonaMesa" to="." method="_on_zona_mesa_mouse_exited"]
 [connection signal="pressed" from="CanvasLayer2/BotonPozo" to="." method="_on_boton_pozo_pressed"]
+[connection signal="pressed" from="CanvasLayer2/BotonSiguienteRonda" to="." method="_on_boton_siguiente_ronda_pressed"]

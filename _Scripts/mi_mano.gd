@@ -127,7 +127,7 @@ func _on_ficha_soltada_drag(ficha: Ficha):
 # Ahora recibe la coordenada desde donde debe salir volando
 func robar_del_pozo(posicion_origen: Vector2):
 	if pozo_de_fichas.is_empty():
-		print("El pozo está vacío. ¡No hay más huesos!")
+		print("El pozo está vacío.")
 		return 
 
 	var datos = pozo_de_fichas.pop_back()
@@ -169,3 +169,28 @@ func quitar_ficha_jugada(ficha: Ficha):
 	fichas_en_mano.erase(ficha)
 	# Reacomodamos la mano para cerrar el hueco que dejó
 	organizar_mano()
+
+# --- NUEVA RONDA (DESCARTAR Y ROBAR) ---
+func nueva_ronda():
+	# 1. Limpiar las fichas actuales de la mano (descartarlas)
+	for ficha in fichas_en_mano:
+		ficha.queue_free()
+	fichas_en_mano.clear()
+	ficha_seleccionada_actual = null
+	
+	# 2. Calcular cuántas podemos robar (máximo 7, o las que queden en el pozo)
+	var fichas_a_robar = min(7, pozo_de_fichas.size())
+	
+	if fichas_a_robar == 0:
+		print("¡No quedan fichas en el pozo para una nueva ronda!")
+		return
+	
+	# 3. Robamos las fichas nuevas
+	for i in range(fichas_a_robar):
+		var datos = pozo_de_fichas.pop_back()
+		crear_ficha(datos[0], datos[1])
+	
+	# 4. Acomodamos la nueva mano
+	organizar_mano()
+	print("Nueva ronda iniciada. Fichas repartidas: ", fichas_a_robar)
+	print("Fichas restantes en el pozo: ", pozo_de_fichas.size())

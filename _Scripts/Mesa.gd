@@ -3,18 +3,33 @@ extends Node2D
 # --- REFERENCIAS ---
 @onready var mano = $MiMano 
 @onready var label_puntos = $CanvasLayer/PuntajeLabel
+@onready var label_objetivo = $CanvasLayer/ObjetivoLabel 
+@onready var label_ronda = $CanvasLayer/RondaLabel       
 @onready var reproductor = $AudioStreamPlayer
+@onready var boton_pozo = $CanvasLayer2/BotonPozo
 
 # --- CONFIGURACIÓN VISUAL ---
 var ancho_ficha: float = 50.0 
 var alto_ficha: float = 97.0 
 var separacion: float = 0.0
 
-# --- MODIFICADORES DE PUNTAJE ---
+# --- CONFIGURACIÓN DE LA PARTIDA ---
+@export_category("Reglas de Partida")
+@export var modo_debug: bool = true # Si es true, ignora las rondas y juegas infinito
+@export var rondas_maximas: int = 3
+@export var puntaje_objetivo_base: int = 150
+
+@export_category("Multiplicadores Balatro")
 @export var multiplicador_capicua: int = 3
+@export var multiplicador_global_castigo: int = 5 # ¡NUEVO! El destructor de avariciosos
 
 # --- CONFIGURACIÓN SONORA ---
 @export var Sfx_PonerFicha = AudioStream
+
+# --- ESTADO DE LA PARTIDA ---
+var mesa_actual: int = 1
+var ronda_actual: int = 1
+var puntos_ronda_actual: int = 0 
 
 # --- ESTADO DEL JUEGO (DATOS) ---
 var extremo_izquierdo: int = -1
@@ -44,6 +59,7 @@ var mouse_sobre_mesa: bool = false
 func _ready():
 	if mano:
 		mano.intento_de_jugada.connect(_validar_jugada)
+	actualizar_ui()
 
 # --- FUNCIONES: CONTROL DE ZONA ---
 func _on_zona_mesa_mouse_entered(): mouse_sobre_mesa = true
@@ -92,6 +108,20 @@ func _validar_jugada(ficha: Ficha):
 		jugar_ficha(ficha, "derecha")
 		return
 	
+# --- SISTEMA ANTI-TRAMPAS ---
+func jugador_tiene_jugada_valida() -> bool:
+	if es_primer_turno: 
+		return true
+		
+	for ficha in mano.fichas_en_mano:
+		var cabe_izq = (ficha.valor_izq == extremo_izquierdo or ficha.valor_der == extremo_izquierdo)
+		var cabe_der = (ficha.valor_izq == extremo_derecho or ficha.valor_der == extremo_derecho)
+		
+		if cabe_izq or cabe_der:
+			return true 
+			
+	return false 
+
 # --- EL GERENTE VISUAL ---
 func jugar_ficha(ficha: Ficha, lado: String, es_capicua: bool = false):
 	var es_doble = (ficha.valor_izq == ficha.valor_der)
@@ -142,11 +172,9 @@ func _calcular_geometria(ficha: Ficha, lado: String, es_doble: bool) -> Dictiona
 	if lado == "izquierda":
 		var last_center = ultima_ficha_izq.posicionDefault
 		
-		# 1. TIMÓN
 		if estado_izq == 0 and (last_center.x - alto_ficha) < limite_izquierdo_x:
 			estado_izq = 1 
 
-		# 2. ROTACIÓN
 		if estado_izq == 0:
 			if es_doble:
 				resultado["rot"] = 0 
@@ -165,14 +193,12 @@ func _calcular_geometria(ficha: Ficha, lado: String, es_doble: bool) -> Dictiona
 				
 		elif estado_izq == 2:
 			if es_doble:
-				# Si es el primer regreso, el doble va acostado formando una T. Si no, va parado.
 				resultado["rot"] = 90 if es_primer_regreso_izq else 0
 				extremo_izquierdo = ficha.valor_izq
 			else:
 				resultado["rot"] = 90 if ficha.valor_der == extremo_izquierdo else -90
 				extremo_izquierdo = ficha.valor_izq if ficha.valor_der == extremo_izquierdo else ficha.valor_der
 
-		# 3. GEOMETRÍA
 		var rot_abs = int(abs(resultado["rot"])) % 180
 		var es_vert = (rot_abs == 0)
 		var new_w = ancho_ficha if es_vert else alto_ficha
@@ -185,13 +211,12 @@ func _calcular_geometria(ficha: Ficha, lado: String, es_doble: bool) -> Dictiona
 		var cx = last_center.x
 		var cy = last_center.y
 
-		# 4. POSICIONAMIENTO
 		if estado_izq == 0: 
 			resultado["pos"] = Vector2(cx - (old_w/2.0) - separacion - (new_w/2.0), cy)
 		elif estado_izq == 1: 
 			resultado["pos"] = Vector2(cx, cy - (old_h/2.0) - separacion - (new_h/2.0))
 			estado_izq = 2
-			es_primer_regreso_izq = true # Activamos la memoria del primer regreso
+			es_primer_regreso_izq = true 
 		elif estado_izq == 2: 
 			if es_primer_regreso_izq:
 				if es_doble:
@@ -208,11 +233,9 @@ func _calcular_geometria(ficha: Ficha, lado: String, es_doble: bool) -> Dictiona
 	elif lado == "derecha":
 		var last_center = ultima_ficha_der.posicionDefault
 		
-		# 1. TIMÓN
 		if estado_der == 0 and (last_center.x + alto_ficha) > limite_derecho_x:
 			estado_der = 1 
 
-		# 2. ROTACIÓN
 		if estado_der == 0:
 			if es_doble:
 				resultado["rot"] = 0 
@@ -237,7 +260,6 @@ func _calcular_geometria(ficha: Ficha, lado: String, es_doble: bool) -> Dictiona
 				resultado["rot"] = 90 if ficha.valor_izq == extremo_derecho else -90
 				extremo_derecho = ficha.valor_der if ficha.valor_izq == extremo_derecho else ficha.valor_izq
 
-		# 3. GEOMETRÍA
 		var rot_abs = int(abs(resultado["rot"])) % 180
 		var es_vert = (rot_abs == 0)
 		var new_w = ancho_ficha if es_vert else alto_ficha
@@ -250,13 +272,12 @@ func _calcular_geometria(ficha: Ficha, lado: String, es_doble: bool) -> Dictiona
 		var cx = last_center.x
 		var cy = last_center.y
 
-		# 4. POSICIONAMIENTO
 		if estado_der == 0: 
 			resultado["pos"] = Vector2(cx + (old_w/2.0) + separacion + (new_w/2.0), cy)
 		elif estado_der == 1: 
 			resultado["pos"] = Vector2(cx, cy + (old_h/2.0) + separacion + (new_h/2.0))
 			estado_der = 2
-			es_primer_regreso_der = true # Activamos la memoria del primer regreso
+			es_primer_regreso_der = true 
 		elif estado_der == 2: 
 			if es_primer_regreso_der:
 				if es_doble:
@@ -284,12 +305,16 @@ func finalizar_jugada(ficha: Ficha, es_capicua: bool = false):
 		puntos_a_sumar = puntos_base * multiplicador_capicua
 	
 	suma_total_puntos += puntos_a_sumar
-	if label_puntos: label_puntos.text = "Puntos en Mesa: %d" % suma_total_puntos
+	actualizar_ui()
+	
 	if mano.ficha_seleccionada_actual == ficha: mano.ficha_seleccionada_actual = null
 	
 	reproductor.stream = Sfx_PonerFicha
 	reproductor.pitch_scale = randf_range(0.95, 1.05)
 	reproductor.play()
+	
+	print("MESA ACTUAL: ", extremo_izquierdo, " ... ", extremo_derecho)
+	verificar_victoria()
 	
 func _animar_rebote_capicua(ficha: Ficha, pos_final: Vector2, pos_rebote: Vector2, rotacion_final: float):
 	ficha.arrastrando = false
@@ -329,5 +354,163 @@ func _reproducir_sonido_rebote():
 	reproductor.play()
 
 func _on_boton_pozo_pressed():
+	if not modo_debug:
+		if jugador_tiene_jugada_valida():
+			print("¡TRAMPA DETECTADA! Tienes una jugada válida en tu mano. ¡Juega!")
+			_animar_temblor_boton()
+			return
+			
 	var posicion_origen = get_global_mouse_position()
-	if mano: mano.robar_del_pozo(posicion_origen)
+	if mano: 
+		mano.robar_del_pozo(posicion_origen)
+	
+
+# --- EL ÁRBITRO DE LA PARTIDA---
+func verificar_victoria():
+	if modo_debug: return false
+
+	# 1. ¿Llegamos al puntaje en bruto?
+	if suma_total_puntos >= puntaje_objetivo_base:
+		
+		# 2. Calculamos mentalmente (en silencio) cuánto nos va a quitar la mano
+		var castigo_fantasma = _calcular_castigo_escalera(true)
+		var puntaje_neto = suma_total_puntos - castigo_fantasma
+		
+		# 3. ¿Sobrevivimos al castigo?
+		if puntaje_neto >= puntaje_objetivo_base:
+			# ¡Ahora sí ganaste de verdad! Cobramos en público para la consola.
+			print("\n---FIN DE LA MESA: COBRANDO IMPUESTOS ---")
+			_calcular_castigo_escalera(false) 
+			suma_total_puntos = puntaje_neto
+			actualizar_ui()
+			
+			print("¡VICTORIA OFICIAL! Has superado la Mesa ", mesa_actual)
+			print("Pronto aquí abriremos la Tienda...")
+			avanzar_siguiente_mesa()
+			return true
+		else:
+			# ¡Aquí está la magia del diseño! Te avisa que te caíste de la victoria.
+			print("Tienes los puntos (", suma_total_puntos, "), pero tu mano te resta -", castigo_fantasma, " y bajas a ", puntaje_neto, ". ¡Deshazte de la basura para ganar!")
+
+	return false
+
+# --- SISTEMA DE CASTIGO: LA ESCALERA DE DOLOR (DE MAYOR A MENOR) ---
+func _calcular_castigo_escalera(silencioso: bool = false) -> int:
+	if not mano or mano.fichas_en_mano.is_empty():
+		return 0
+
+	var fichas = mano.fichas_en_mano.duplicate()
+	fichas.sort_custom(func(a, b): return (a.valor_izq + a.valor_der) > (b.valor_izq + b.valor_der))
+
+	var castigo_total = 0
+	if not silencioso: print("\n---CALCULANDO ESCALERA DE DOLOR ---")
+
+	for i in range(fichas.size()):
+		var ficha = fichas[i]
+		var valor_base = ficha.valor_izq + ficha.valor_der
+		var penalizacion = 0
+
+		if i == 0:
+			penalizacion = valor_base * 1
+			if not silencioso: print("- Ficha 1 [%d-%d] (Base x1): -%d puntos" % [ficha.valor_izq, ficha.valor_der, penalizacion])
+		elif i == 1:
+			penalizacion = valor_base * 2
+			if not silencioso: print("- Ficha 2 [%d-%d] (Escalera x2): -%d puntos" % [ficha.valor_izq, ficha.valor_der, penalizacion])
+		else:
+			penalizacion = valor_base * multiplicador_global_castigo
+			if not silencioso: print("- Ficha %d [%d-%d] (MULTI GLOBAL x%d): -%d puntos" % [i+1, ficha.valor_izq, ficha.valor_der, multiplicador_global_castigo, penalizacion])
+
+		castigo_total += penalizacion
+
+	if not silencioso:
+		print("TOTAL PERDIDO: -", castigo_total, " puntos")
+		print("----------------------------------------\n")
+		
+	return castigo_total
+
+func terminar_ronda():
+	if modo_debug:
+		print("Modo Debug: Ignorando el cambio de ronda.")
+		return
+
+	# 1. COBRAMOS EL CASTIGO
+	var castigo = _calcular_castigo_escalera()
+	if castigo > 0:
+		suma_total_puntos -= castigo
+		if suma_total_puntos < 0: 
+			suma_total_puntos = 0
+		actualizar_ui()
+		_animar_temblor_boton() # Opcional: hacemos temblar el botón como feedback del golpe
+
+	# 2. AVANZAMOS DE RONDA
+	ronda_actual += 1
+	actualizar_ui()
+	
+	if ronda_actual > rondas_maximas:
+		print("¡GAME OVER! Te quedaste sin rondas. Puntaje final: ", suma_total_puntos, "/", puntaje_objetivo_base)
+	else:
+		print("Iniciando Ronda ", ronda_actual, " de ", rondas_maximas)
+		print("Faltan ", puntaje_objetivo_base - suma_total_puntos, " puntos para ganar la Mesa.")
+		
+		if mano:
+			mano.nueva_ronda()
+
+func _on_boton_siguiente_ronda_pressed():
+	terminar_ronda()
+	
+# --- ACTUALIZADOR DE INTERFAZ ---
+func actualizar_ui():
+	if label_puntos: label_puntos.text = "Puntos en Mesa: %d" % suma_total_puntos
+	
+	if modo_debug:
+		if label_objetivo: label_objetivo.text = "Objetivo: INF (Debug)"
+		if label_ronda: label_ronda.text = "Rondas: INF (Debug)"
+	else:
+		if label_objetivo: label_objetivo.text = "Objetivo: %d" % puntaje_objetivo_base
+		if label_ronda: label_ronda.text = "Ronda: %d / %d" % [ronda_actual, rondas_maximas]
+
+# --- TRANSICIÓN DE NIVEL ---
+func avanzar_siguiente_mesa():
+	print("¡AVANZANDO A LA SIGUIENTE MESA!")
+	
+	mesa_actual += 1
+	ronda_actual = 1
+	suma_total_puntos = 0
+	puntaje_objetivo_base = int(puntaje_objetivo_base * 1.5) 
+	
+	for hijo in get_children():
+		if hijo is Ficha:
+			hijo.queue_free()
+			
+	es_primer_turno = true
+	extremo_izquierdo = -1
+	extremo_derecho = -1
+	estado_izq = 0
+	estado_der = 0
+	nivel_y_izq = 0.0
+	nivel_y_der = 0.0
+	es_primer_regreso_izq = false
+	es_primer_regreso_der = false
+	ultima_ficha_izq = null
+	ultima_ficha_der = null
+	
+	if mano:
+		mano.generar_mano_inicial()
+		
+	actualizar_ui()
+
+# --- ANIMACIONES DE INTERFAZ ---
+func _animar_temblor_boton():
+	if not boton_pozo: return
+	
+	var pos_original = boton_pozo.position
+	var fuerza = 15.0 
+	var tiempo = 0.05 
+	
+	var tween = create_tween()
+	
+	tween.tween_property(boton_pozo, "position:x", pos_original.x - fuerza, tiempo)
+	tween.tween_property(boton_pozo, "position:x", pos_original.x + fuerza, tiempo * 2)
+	tween.tween_property(boton_pozo, "position:x", pos_original.x - fuerza, tiempo * 2)
+	tween.tween_property(boton_pozo, "position:x", pos_original.x + fuerza, tiempo * 2)
+	tween.tween_property(boton_pozo, "position:x", pos_original.x, tiempo)
