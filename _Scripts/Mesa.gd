@@ -7,6 +7,7 @@ extends Node2D
 @onready var label_ronda = $CanvasLayer/RondaLabel       
 @onready var reproductor = $AudioStreamPlayer
 @onready var boton_pozo = $CanvasLayer2/BotonPozo
+@onready var label_robos = $CanvasLayer/RobosLabel
 
 # --- CONFIGURACIÓN VISUAL ---
 var ancho_ficha: float = 50.0 
@@ -17,11 +18,12 @@ var separacion: float = 0.0
 @export_category("Reglas de Partida")
 @export var modo_debug: bool = true # Si es true, ignora las rondas y juegas infinito
 @export var rondas_maximas: int = 3
+@export var robos_maximos: int = 3
 @export var puntaje_objetivo_base: int = 150
 
-@export_category("Multiplicadores Balatro")
+@export_category("Multiplicadores")
 @export var multiplicador_capicua: int = 3
-@export var multiplicador_global_castigo: int = 5 # ¡NUEVO! El destructor de avariciosos
+@export var multiplicador_global_castigo: int = 5 
 
 # --- CONFIGURACIÓN SONORA ---
 @export var Sfx_PonerFicha = AudioStream
@@ -30,6 +32,7 @@ var separacion: float = 0.0
 var mesa_actual: int = 1
 var ronda_actual: int = 1
 var puntos_ronda_actual: int = 0 
+var robos_restantes: int = 3
 
 # --- ESTADO DEL JUEGO (DATOS) ---
 var extremo_izquierdo: int = -1
@@ -59,6 +62,7 @@ var mouse_sobre_mesa: bool = false
 func _ready():
 	if mano:
 		mano.intento_de_jugada.connect(_validar_jugada)
+	robos_restantes = robos_maximos
 	actualizar_ui()
 
 # --- FUNCIONES: CONTROL DE ZONA ---
@@ -355,15 +359,27 @@ func _reproducir_sonido_rebote():
 
 func _on_boton_pozo_pressed():
 	if not modo_debug:
+		# Regla 1: Sistema Anti-Trampas
 		if jugador_tiene_jugada_valida():
-			print("¡TRAMPA DETECTADA! Tienes una jugada válida en tu mano. ¡Juega!")
+			print("Tienes una jugada válida en tu mano. ¡Juega!")
 			_animar_temblor_boton()
 			return
 			
+		# Regla 2: Límite de Robos
+		if robos_restantes <= 0:
+			print("¡SIN ROBOS! Ya agotaste tus robos de esta ronda. ¡Termina la Ronda!")
+			_animar_temblor_boton()
+			return
+
+	# Si pasó la seguridad (o es debug), le dejamos robar
 	var posicion_origen = get_global_mouse_position()
 	if mano: 
 		mano.robar_del_pozo(posicion_origen)
-	
+		
+		# Le restamos un robo y actualizamos el texto en pantalla
+		if not modo_debug:
+			robos_restantes -= 1
+			actualizar_ui()
 
 # --- EL ÁRBITRO DE LA PARTIDA---
 func verificar_victoria():
@@ -444,6 +460,7 @@ func terminar_ronda():
 
 	# 2. AVANZAMOS DE RONDA
 	ronda_actual += 1
+	robos_restantes = robos_maximos
 	actualizar_ui()
 	
 	if ronda_actual > rondas_maximas:
@@ -465,9 +482,11 @@ func actualizar_ui():
 	if modo_debug:
 		if label_objetivo: label_objetivo.text = "Objetivo: INF (Debug)"
 		if label_ronda: label_ronda.text = "Rondas: INF (Debug)"
+		if label_robos: label_robos.text = "Robos: INF (Debug)"
 	else:
 		if label_objetivo: label_objetivo.text = "Objetivo: %d" % puntaje_objetivo_base
 		if label_ronda: label_ronda.text = "Ronda: %d / %d" % [ronda_actual, rondas_maximas]
+		if label_robos: label_robos.text = "Robos: %d" % robos_restantes
 
 # --- TRANSICIÓN DE NIVEL ---
 func avanzar_siguiente_mesa():
@@ -475,6 +494,7 @@ func avanzar_siguiente_mesa():
 	
 	mesa_actual += 1
 	ronda_actual = 1
+	robos_restantes = robos_maximos
 	suma_total_puntos = 0
 	puntaje_objetivo_base = int(puntaje_objetivo_base * 1.5) 
 	
