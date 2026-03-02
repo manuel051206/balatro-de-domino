@@ -16,7 +16,7 @@ var separacion: float = 0.0
 
 # --- CONFIGURACIÓN DE LA PARTIDA ---
 @export_category("Reglas de Partida")
-@export var modo_debug: bool = true # Si es true, ignora las rondas y juegas infinito
+@export var modo_debug: bool = true 
 @export var rondas_maximas: int = 3
 @export var robos_maximos: int = 3
 @export var puntaje_objetivo_base: int = 150
@@ -169,7 +169,7 @@ func jugar_ficha(ficha: Ficha, lado: String, es_capicua: bool = false):
 		ficha.posicionDefault = pos_final
 		finalizar_jugada(ficha, false)
 
-# --- EL INGENIERO DE LA SERPIENTE (V7 - LAS ESQUINAS PERFECTAS) ---
+# --- EL INGENIERO DE LA SERPIENTE (V9 - GEOMETRÍA REAL Y CUADRANTES) ---
 func _calcular_geometria(ficha: Ficha, lado: String, es_doble: bool) -> Dictionary:
 	var resultado = {"pos": Vector2.ZERO, "rot": 0.0, "rebote": Vector2.ZERO}
 
@@ -179,6 +179,7 @@ func _calcular_geometria(ficha: Ficha, lado: String, es_doble: bool) -> Dictiona
 		if estado_izq == 0 and (last_center.x - alto_ficha) < limite_izquierdo_x:
 			estado_izq = 1 
 
+		# --- ROTACIONES ---
 		if estado_izq == 0:
 			if es_doble:
 				resultado["rot"] = 0 
@@ -189,7 +190,7 @@ func _calcular_geometria(ficha: Ficha, lado: String, es_doble: bool) -> Dictiona
 				
 		elif estado_izq == 1:
 			if es_doble:
-				resultado["rot"] = 90
+				resultado["rot"] = 0 
 				extremo_izquierdo = ficha.valor_izq
 			else:
 				resultado["rot"] = 180 if ficha.valor_izq == extremo_izquierdo else 0
@@ -203,6 +204,7 @@ func _calcular_geometria(ficha: Ficha, lado: String, es_doble: bool) -> Dictiona
 				resultado["rot"] = 90 if ficha.valor_der == extremo_izquierdo else -90
 				extremo_izquierdo = ficha.valor_izq if ficha.valor_der == extremo_izquierdo else ficha.valor_der
 
+		# --- TAMAÑOS Y ESTADO DE LA ANTERIOR ---
 		var rot_abs = int(abs(resultado["rot"])) % 180
 		var es_vert = (rot_abs == 0)
 		var new_w = ancho_ficha if es_vert else alto_ficha
@@ -215,18 +217,20 @@ func _calcular_geometria(ficha: Ficha, lado: String, es_doble: bool) -> Dictiona
 		var cx = last_center.x
 		var cy = last_center.y
 
+		# --- POSICIONES EXACTAS ---
 		if estado_izq == 0: 
 			resultado["pos"] = Vector2(cx - (old_w/2.0) - separacion - (new_w/2.0), cy)
 		elif estado_izq == 1: 
-			resultado["pos"] = Vector2(cx, cy - (old_h/2.0) - separacion - (new_h/2.0))
+			# Se ancla justo encima del cuadrito izquierdo (-old_w / 4)
+			var shift_x = 0.0 if old_es_vert else (-old_w / 4.0)
+			resultado["pos"] = Vector2(cx + shift_x, cy - (old_h/2.0) - separacion - (new_h/2.0))
 			estado_izq = 2
 			es_primer_regreso_izq = true 
 		elif estado_izq == 2: 
 			if es_primer_regreso_izq:
-				if es_doble:
-					resultado["pos"] = Vector2(cx, cy - (old_h/2.0) - separacion - (new_h/2.0))
-				else:
-					resultado["pos"] = Vector2(cx - (old_w/2.0) + (new_w/2.0), cy - (old_h/2.0) - separacion - (new_h/2.0))
+				# Se ancla a la derecha de la mitad superior de la esquina (-old_h / 4)
+				var shift_y = (-old_h / 4.0) if old_es_vert else 0.0
+				resultado["pos"] = Vector2(cx + (old_w/2.0) + separacion + (new_w/2.0), cy + shift_y)
 				nivel_y_izq = resultado["pos"].y
 				es_primer_regreso_izq = false
 			else:
@@ -240,6 +244,7 @@ func _calcular_geometria(ficha: Ficha, lado: String, es_doble: bool) -> Dictiona
 		if estado_der == 0 and (last_center.x + alto_ficha) > limite_derecho_x:
 			estado_der = 1 
 
+		# --- ROTACIONES ---
 		if estado_der == 0:
 			if es_doble:
 				resultado["rot"] = 0 
@@ -250,7 +255,7 @@ func _calcular_geometria(ficha: Ficha, lado: String, es_doble: bool) -> Dictiona
 				
 		elif estado_der == 1:
 			if es_doble:
-				resultado["rot"] = 90
+				resultado["rot"] = 0 
 				extremo_derecho = ficha.valor_der
 			else:
 				resultado["rot"] = 0 if ficha.valor_izq == extremo_derecho else 180
@@ -264,6 +269,7 @@ func _calcular_geometria(ficha: Ficha, lado: String, es_doble: bool) -> Dictiona
 				resultado["rot"] = 90 if ficha.valor_izq == extremo_derecho else -90
 				extremo_derecho = ficha.valor_der if ficha.valor_izq == extremo_derecho else ficha.valor_izq
 
+		# --- TAMAÑOS Y ESTADO DE LA ANTERIOR ---
 		var rot_abs = int(abs(resultado["rot"])) % 180
 		var es_vert = (rot_abs == 0)
 		var new_w = ancho_ficha if es_vert else alto_ficha
@@ -276,18 +282,20 @@ func _calcular_geometria(ficha: Ficha, lado: String, es_doble: bool) -> Dictiona
 		var cx = last_center.x
 		var cy = last_center.y
 
+		# --- POSICIONES EXACTAS ---
 		if estado_der == 0: 
 			resultado["pos"] = Vector2(cx + (old_w/2.0) + separacion + (new_w/2.0), cy)
 		elif estado_der == 1: 
-			resultado["pos"] = Vector2(cx, cy + (old_h/2.0) + separacion + (new_h/2.0))
+			# Se ancla justo debajo del cuadrito derecho (+old_w / 4)
+			var shift_x = 0.0 if old_es_vert else (old_w / 4.0)
+			resultado["pos"] = Vector2(cx + shift_x, cy + (old_h/2.0) + separacion + (new_h/2.0))
 			estado_der = 2
 			es_primer_regreso_der = true 
 		elif estado_der == 2: 
 			if es_primer_regreso_der:
-				if es_doble:
-					resultado["pos"] = Vector2(cx, cy + (old_h/2.0) + separacion + (new_h/2.0))
-				else:
-					resultado["pos"] = Vector2(cx + (old_w/2.0) - (new_w/2.0), cy + (old_h/2.0) + separacion + (new_h/2.0))
+				# Se ancla a la izquierda de la mitad inferior de la esquina (+old_h / 4)
+				var shift_y = (old_h / 4.0) if old_es_vert else 0.0
+				resultado["pos"] = Vector2(cx - (old_w/2.0) - separacion - (new_w/2.0), cy + shift_y)
 				nivel_y_der = resultado["pos"].y
 				es_primer_regreso_der = false
 			else:
@@ -317,7 +325,6 @@ func finalizar_jugada(ficha: Ficha, es_capicua: bool = false):
 	reproductor.pitch_scale = randf_range(0.95, 1.05)
 	reproductor.play()
 	
-	print("MESA ACTUAL: ", extremo_izquierdo, " ... ", extremo_derecho)
 	verificar_victoria()
 	
 func _animar_rebote_capicua(ficha: Ficha, pos_final: Vector2, pos_rebote: Vector2, rotacion_final: float):
@@ -359,24 +366,18 @@ func _reproducir_sonido_rebote():
 
 func _on_boton_pozo_pressed():
 	if not modo_debug:
-		# Regla 1: Sistema Anti-Trampas
 		if jugador_tiene_jugada_valida():
-			print("Tienes una jugada válida en tu mano. ¡Juega!")
 			_animar_temblor_boton()
 			return
 			
-		# Regla 2: Límite de Robos
 		if robos_restantes <= 0:
-			print("¡SIN ROBOS! Ya agotaste tus robos de esta ronda. ¡Termina la Ronda!")
 			_animar_temblor_boton()
 			return
 
-	# Si pasó la seguridad (o es debug), le dejamos robar
 	var posicion_origen = get_global_mouse_position()
 	if mano: 
 		mano.robar_del_pozo(posicion_origen)
 		
-		# Le restamos un robo y actualizamos el texto en pantalla
 		if not modo_debug:
 			robos_restantes -= 1
 			actualizar_ui()
@@ -385,32 +386,20 @@ func _on_boton_pozo_pressed():
 func verificar_victoria():
 	if modo_debug: return false
 
-	# 1. ¿Llegamos al puntaje en bruto?
 	if suma_total_puntos >= puntaje_objetivo_base:
-		
-		# 2. Calculamos mentalmente (en silencio) cuánto nos va a quitar la mano
 		var castigo_fantasma = _calcular_castigo_escalera(true)
 		var puntaje_neto = suma_total_puntos - castigo_fantasma
 		
-		# 3. ¿Sobrevivimos al castigo?
 		if puntaje_neto >= puntaje_objetivo_base:
-			# ¡Ahora sí ganaste de verdad! Cobramos en público para la consola.
-			print("\n---FIN DE LA MESA: COBRANDO IMPUESTOS ---")
 			_calcular_castigo_escalera(false) 
 			suma_total_puntos = puntaje_neto
 			actualizar_ui()
-			
-			print("¡VICTORIA OFICIAL! Has superado la Mesa ", mesa_actual)
-			print("Pronto aquí abriremos la Tienda...")
 			avanzar_siguiente_mesa()
 			return true
-		else:
-			# ¡Aquí está la magia del diseño! Te avisa que te caíste de la victoria.
-			print("Tienes los puntos (", suma_total_puntos, "), pero tu mano te resta -", castigo_fantasma, " y bajas a ", puntaje_neto, ". ¡Deshazte de la basura para ganar!")
 
 	return false
 
-# --- SISTEMA DE CASTIGO: LA ESCALERA DE DOLOR (DE MAYOR A MENOR) ---
+# --- SISTEMA DE CASTIGO: LA ESCALERA DE DOLOR ---
 func _calcular_castigo_escalera(silencioso: bool = false) -> int:
 	if not mano or mano.fichas_en_mano.is_empty():
 		return 0
@@ -419,56 +408,36 @@ func _calcular_castigo_escalera(silencioso: bool = false) -> int:
 	fichas.sort_custom(func(a, b): return (a.valor_izq + a.valor_der) > (b.valor_izq + b.valor_der))
 
 	var castigo_total = 0
-	if not silencioso: print("\n---CALCULANDO ESCALERA DE DOLOR ---")
 
 	for i in range(fichas.size()):
 		var ficha = fichas[i]
 		var valor_base = ficha.valor_izq + ficha.valor_der
 		var penalizacion = 0
 
-		if i == 0:
-			penalizacion = valor_base * 1
-			if not silencioso: print("- Ficha 1 [%d-%d] (Base x1): -%d puntos" % [ficha.valor_izq, ficha.valor_der, penalizacion])
-		elif i == 1:
-			penalizacion = valor_base * 2
-			if not silencioso: print("- Ficha 2 [%d-%d] (Escalera x2): -%d puntos" % [ficha.valor_izq, ficha.valor_der, penalizacion])
-		else:
-			penalizacion = valor_base * multiplicador_global_castigo
-			if not silencioso: print("- Ficha %d [%d-%d] (MULTI GLOBAL x%d): -%d puntos" % [i+1, ficha.valor_izq, ficha.valor_der, multiplicador_global_castigo, penalizacion])
+		if i == 0: penalizacion = valor_base * 1
+		elif i == 1: penalizacion = valor_base * 2
+		else: penalizacion = valor_base * multiplicador_global_castigo
 
 		castigo_total += penalizacion
-
-	if not silencioso:
-		print("TOTAL PERDIDO: -", castigo_total, " puntos")
-		print("----------------------------------------\n")
 		
 	return castigo_total
 
 func terminar_ronda():
-	if modo_debug:
-		print("Modo Debug: Ignorando el cambio de ronda.")
-		return
+	if modo_debug: return
 
-	# 1. COBRAMOS EL CASTIGO
 	var castigo = _calcular_castigo_escalera()
 	if castigo > 0:
 		suma_total_puntos -= castigo
 		if suma_total_puntos < 0: 
 			suma_total_puntos = 0
 		actualizar_ui()
-		_animar_temblor_boton() # Opcional: hacemos temblar el botón como feedback del golpe
+		_animar_temblor_boton()
 
-	# 2. AVANZAMOS DE RONDA
 	ronda_actual += 1
 	robos_restantes = robos_maximos
 	actualizar_ui()
 	
-	if ronda_actual > rondas_maximas:
-		print("¡GAME OVER! Te quedaste sin rondas. Puntaje final: ", suma_total_puntos, "/", puntaje_objetivo_base)
-	else:
-		print("Iniciando Ronda ", ronda_actual, " de ", rondas_maximas)
-		print("Faltan ", puntaje_objetivo_base - suma_total_puntos, " puntos para ganar la Mesa.")
-		
+	if ronda_actual <= rondas_maximas:
 		if mano:
 			mano.nueva_ronda()
 
@@ -490,8 +459,6 @@ func actualizar_ui():
 
 # --- TRANSICIÓN DE NIVEL ---
 func avanzar_siguiente_mesa():
-	print("¡AVANZANDO A LA SIGUIENTE MESA!")
-	
 	mesa_actual += 1
 	ronda_actual = 1
 	robos_restantes = robos_maximos
@@ -522,13 +489,10 @@ func avanzar_siguiente_mesa():
 # --- ANIMACIONES DE INTERFAZ ---
 func _animar_temblor_boton():
 	if not boton_pozo: return
-	
 	var pos_original = boton_pozo.position
 	var fuerza = 15.0 
 	var tiempo = 0.05 
-	
 	var tween = create_tween()
-	
 	tween.tween_property(boton_pozo, "position:x", pos_original.x - fuerza, tiempo)
 	tween.tween_property(boton_pozo, "position:x", pos_original.x + fuerza, tiempo * 2)
 	tween.tween_property(boton_pozo, "position:x", pos_original.x - fuerza, tiempo * 2)
