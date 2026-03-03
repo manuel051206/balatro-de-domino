@@ -3,6 +3,7 @@ extends Node2D
 # --- REFERENCIAS ---
 @onready var mano = $MiMano 
 @onready var label_puntos = $CanvasLayer/PuntajeLabel
+@onready var label_puntos_mano = $CanvasLayer/PuntosManoLabel
 @onready var label_objetivo = $CanvasLayer/ObjetivoLabel 
 @onready var label_ronda = $CanvasLayer/RondaLabel       
 @onready var reproductor = $AudioStreamPlayer
@@ -33,12 +34,14 @@ var mesa_actual: int = 1
 var ronda_actual: int = 1
 var puntos_ronda_actual: int = 0 
 var robos_restantes: int = 3
+var juego_terminado: bool = false
 
 # --- ESTADO DEL JUEGO (DATOS) ---
 var extremo_izquierdo: int = -1
 var extremo_derecho: int = -1
 var es_primer_turno: bool = true
 var suma_total_puntos: int = 0
+var historial_jugadas: Array = []
 
 # --- LÍMITES DE LA PANTALLA (El "Radar") ---
 var limite_izquierdo_x: float = -450.0 
@@ -62,7 +65,31 @@ var mouse_sobre_mesa: bool = false
 func _ready():
 	if mano:
 		mano.intento_de_jugada.connect(_validar_jugada)
-	robos_restantes = robos_maximos
+	# Intentamos cargar la partida
+	if SaveManager.cargar_partida():
+		var datos = SaveManager.datos_partida
+		mesa_actual = int(datos.get("mesa_actual", 1))
+		ronda_actual = int(datos.get("ronda_actual", 1))
+		robos_restantes = int(datos.get("robos_restantes", robos_maximos))
+		suma_total_puntos = int(datos.get("suma_total_puntos", 0))
+		puntos_ronda_actual = int(datos.get("puntos_ronda_actual", 0))
+		puntaje_objetivo_base = int(datos.get("puntaje_objetivo_base", puntaje_objetivo_base))
+		print("🔍 DEBUG LECTURA JSON - Objetivo leído: ", puntaje_objetivo_base)
+		# Extraemos el historial y lo reconstruimos
+		historial_jugadas = datos.get("historial_jugadas", [])
+		if not historial_jugadas.is_empty():
+			reconstruir_serpiente(historial_jugadas)
+		# ¡Le damos a la mano su estado guardado!
+		if mano:
+			var mano_guardada = datos.get("fichas_en_mano", [])
+			var pozo_guardado = datos.get("pozo_de_fichas", [])
+			mano.cargar_estado(mano_guardada, pozo_guardado)
+	
+	else:
+		#Si NO hay partida, inicializamos normal
+		robos_restantes = robos_maximos
+		if mano:
+			mano.generar_mano_inicial() # Ahora la Mesa da la orden de empezar
 	actualizar_ui()
 
 # --- FUNCIONES: CONTROL DE ZONA ---
@@ -76,6 +103,8 @@ func _on_zona_mesa_input_event(_viewport, event, _shape_idx):
 
 # --- ÁRBITRO: ¿ES LEGAL LA JUGADA? ---
 func _validar_jugada(ficha: Ficha):
+	if juego_terminado:
+		return
 	if not mouse_sobre_mesa: return
 
 	if es_primer_turno:
@@ -127,7 +156,11 @@ func jugador_tiene_jugada_valida() -> bool:
 	return false 
 
 # --- EL GERENTE VISUAL ---
-func jugar_ficha(ficha: Ficha, lado: String, es_capicua: bool = false):
+func jugar_ficha(ficha: Ficha, lado: String, es_capicua: bool = false, es_reconstruccion: bool = false):
+	# Guarda el historial si es una jugada real
+	if not es_reconstruccion:
+		historial_jugadas.append({"v1": ficha.valor_izq, "v2": ficha.valor_der, "lado": lado})
+	
 	var es_doble = (ficha.valor_izq == ficha.valor_der)
 	var pos_final: Vector2
 	var pos_rebote: Vector2 
@@ -139,7 +172,7 @@ func jugar_ficha(ficha: Ficha, lado: String, es_capicua: bool = false):
 		es_primer_turno = false
 		
 		ficha.posicionDefault = Vector2.ZERO
-		ficha.rotation_degrees = 0 if es_doble else -90
+		ficha.rotation_degrees = 0.0 if es_doble else -90.0
 		
 		ultima_ficha_izq = ficha
 		ultima_ficha_der = ficha
@@ -150,17 +183,25 @@ func jugar_ficha(ficha: Ficha, lado: String, es_capicua: bool = false):
 		es_primer_regreso_izq = false
 		es_primer_regreso_der = false
 		
-		finalizar_jugada(ficha)
+		finalizar_jugada(ficha, false, es_reconstruccion)
 		return
-
+	
 	var datos = _calcular_geometria(ficha, lado, es_doble)
 	
 	pos_final = datos["pos"]
 	rotacion_final = datos["rot"]
 	pos_rebote = datos["rebote"]
-
+	
 	if lado == "izquierda": ultima_ficha_izq = ficha
 	elif lado == "derecha": ultima_ficha_der = ficha
+	
+	if es_reconstruccion:
+		# En reconstrucción, ignoramos animaciones capicúa y encajamos de golpe
+		ficha.rotation_degrees = rotacion_final
+		ficha.posicionDefault = pos_final
+		ficha.global_position = pos_final
+		finalizar_jugada(ficha, false, true)
+		return
 
 	if es_capicua:
 		_animar_rebote_capicua(ficha, pos_final, pos_rebote, rotacion_final)
@@ -306,8 +347,13 @@ func _calcular_geometria(ficha: Ficha, lado: String, es_doble: bool) -> Dictiona
 	return resultado
 
 # --- FINALIZACIÓN Y ANIMACIÓN ---
-func finalizar_jugada(ficha: Ficha, es_capicua: bool = false):
+func finalizar_jugada(ficha: Ficha, es_capicua: bool = false, es_reconstruccion: bool = false):
 	ficha.bloquear()
+	
+	# Si es un fantasma reconstruyéndose, terminamos aquí para no duplicar puntos
+	if es_reconstruccion: 
+		return
+	
 	if mano: mano.quitar_ficha_jugada(ficha)
 	
 	var puntos_base = ficha.valor_izq + ficha.valor_der
@@ -316,7 +362,9 @@ func finalizar_jugada(ficha: Ficha, es_capicua: bool = false):
 	if es_capicua:
 		puntos_a_sumar = puntos_base * multiplicador_capicua
 	
+	# Sumamos al banco total y a la mano actual
 	suma_total_puntos += puntos_a_sumar
+	puntos_ronda_actual += puntos_a_sumar
 	actualizar_ui()
 	
 	if mano.ficha_seleccionada_actual == ficha: mano.ficha_seleccionada_actual = null
@@ -325,6 +373,7 @@ func finalizar_jugada(ficha: Ficha, es_capicua: bool = false):
 	reproductor.pitch_scale = randf_range(0.95, 1.05)
 	reproductor.play()
 	
+	guardar_estado_actual() # Guarda tras cada jugada
 	verificar_victoria()
 	
 func _animar_rebote_capicua(ficha: Ficha, pos_final: Vector2, pos_rebote: Vector2, rotacion_final: float):
@@ -365,6 +414,8 @@ func _reproducir_sonido_rebote():
 	reproductor.play()
 
 func _on_boton_pozo_pressed():
+	if juego_terminado:
+		return
 	if not modo_debug:
 		if jugador_tiene_jugada_valida():
 			_animar_temblor_boton()
@@ -381,6 +432,7 @@ func _on_boton_pozo_pressed():
 		if not modo_debug:
 			robos_restantes -= 1
 			actualizar_ui()
+			guardar_estado_actual() # Guarda en el instante en que robas
 
 # --- EL ÁRBITRO DE LA PARTIDA---
 func verificar_victoria():
@@ -391,6 +443,9 @@ func verificar_victoria():
 		var puntaje_neto = suma_total_puntos - castigo_fantasma
 		
 		if puntaje_neto >= puntaje_objetivo_base:
+			# NUEVO: Mensaje claro en consola para saber qué pasó
+			print("🏆 ¡MESA SUPERADA! Puntos logrados: ", puntaje_neto, " / Objetivo: ", puntaje_objetivo_base)
+			
 			_calcular_castigo_escalera(false) 
 			suma_total_puntos = puntaje_neto
 			actualizar_ui()
@@ -400,7 +455,7 @@ func verificar_victoria():
 	return false
 
 # --- SISTEMA DE CASTIGO: LA ESCALERA DE DOLOR ---
-func _calcular_castigo_escalera(silencioso: bool = false) -> int:
+func _calcular_castigo_escalera(_silencioso: bool = false) -> int:
 	if not mano or mano.fichas_en_mano.is_empty():
 		return 0
 
@@ -423,44 +478,71 @@ func _calcular_castigo_escalera(silencioso: bool = false) -> int:
 	return castigo_total
 
 func terminar_ronda():
-	if modo_debug: return
+# Si ya ganamos o perdimos, el botón no hace nada
+	if modo_debug or juego_terminado: return
 
 	var castigo = _calcular_castigo_escalera()
 	if castigo > 0:
 		suma_total_puntos -= castigo
 		if suma_total_puntos < 0: 
 			suma_total_puntos = 0
-		actualizar_ui()
 		_animar_temblor_boton()
-
+		
+	# Verificamos si ganaste gracias a sobrevivir al castigo
+	if verificar_victoria():
+		return # Si ganaste, verificar_victoria ya hizo el trabajo. Cortamos aquí.
+		
+	# Aumentamos el contador de la mano (ronda)
 	ronda_actual += 1
+	# Reiniciamos los puntos de esta mano específica y los robos
+	puntos_ronda_actual = 0
 	robos_restantes = robos_maximos
-	actualizar_ui()
 	
 	if ronda_actual <= rondas_maximas:
 		if mano:
 			mano.nueva_ronda()
+		actualizar_ui()
+		# Guardamos AQUÍ, DESPUÉS de repartir la nueva mano
+		guardar_estado_actual()
+	else:
+# ¡GAME OVER REAL!
+		juego_terminado = true
+		actualizar_ui()
+		print("GAME OVER - No alcanzaste los puntos.")
+		# Aseguramos que la interfaz diga Game Over
+		if label_ronda: label_ronda.text = "¡GAME OVER!"
+		
+		# ---> OPCIONAL PERO RECOMENDADO: Borramos la partida guardada porque perdió <---
+		SaveManager.borrar_partida()
+		# ---> NUEVO: Esperamos 3 segundos para que lea el mensaje y lo mandamos al menú
+		await get_tree().create_timer(3.0).timeout
+		get_tree().change_scene_to_file("res://_Scenes/MainMenu.tscn") # Asegúrate de que esta ruta sea la correcta
 
 func _on_boton_siguiente_ronda_pressed():
 	terminar_ronda()
 	
 # --- ACTUALIZADOR DE INTERFAZ ---
 func actualizar_ui():
-	if label_puntos: label_puntos.text = "Puntos en Mesa: %d" % suma_total_puntos
+	
+	# Mostrar Total y Mano Actual
+	if label_puntos: label_puntos.text = "Banco Total: %d" % suma_total_puntos
+	if label_puntos_mano: label_puntos_mano.text = "Puntos de esta Mano: %d" % puntos_ronda_actual
 	
 	if modo_debug:
 		if label_objetivo: label_objetivo.text = "Objetivo: INF (Debug)"
-		if label_ronda: label_ronda.text = "Rondas: INF (Debug)"
+		if label_ronda: label_ronda.text = "Manos: INF (Debug)"
 		if label_robos: label_robos.text = "Robos: INF (Debug)"
 	else:
 		if label_objetivo: label_objetivo.text = "Objetivo: %d" % puntaje_objetivo_base
-		if label_ronda: label_ronda.text = "Ronda: %d / %d" % [ronda_actual, rondas_maximas]
+		if label_ronda: label_ronda.text = "Mano: %d / %d" % [ronda_actual, rondas_maximas]
 		if label_robos: label_robos.text = "Robos: %d" % robos_restantes
 
 # --- TRANSICIÓN DE NIVEL ---
 func avanzar_siguiente_mesa():
+	historial_jugadas.clear()
 	mesa_actual += 1
 	ronda_actual = 1
+	puntos_ronda_actual = 0 # <--- Añade esto
 	robos_restantes = robos_maximos
 	suma_total_puntos = 0
 	puntaje_objetivo_base = int(puntaje_objetivo_base * 1.5) 
@@ -485,6 +567,8 @@ func avanzar_siguiente_mesa():
 		mano.generar_mano_inicial()
 		
 	actualizar_ui()
+	guardar_estado_actual()
+	print("💾 DEBUG GUARDADO - Nuevo objetivo guardado: ", puntaje_objetivo_base)
 
 # --- ANIMACIONES DE INTERFAZ ---
 func _animar_temblor_boton():
@@ -498,3 +582,42 @@ func _animar_temblor_boton():
 	tween.tween_property(boton_pozo, "position:x", pos_original.x - fuerza, tiempo * 2)
 	tween.tween_property(boton_pozo, "position:x", pos_original.x + fuerza, tiempo * 2)
 	tween.tween_property(boton_pozo, "position:x", pos_original.x, tiempo)
+# --- SISTEMA DE GUARDADO ---
+func guardar_estado_actual():
+	if modo_debug: return # No guardamos si estamos testeando
+	
+	# Empaquetamos todo lo que queremos recordar en un diccionario
+	var estado_a_guardar = {
+		"mesa_actual": mesa_actual,
+		"ronda_actual": ronda_actual,
+		"robos_restantes": robos_restantes,
+		"suma_total_puntos": suma_total_puntos,
+		"puntos_ronda_actual": puntos_ronda_actual,
+		"puntaje_objetivo_base": puntaje_objetivo_base,
+		"historial_jugadas": historial_jugadas,
+		"fichas_en_mano": mano.obtener_datos_mano() if mano else [],
+		"pozo_de_fichas": mano.pozo_de_fichas if mano else [],
+		
+	}
+	# Le enviamos el paquete al cerebro global
+	SaveManager.guardar_partida(estado_a_guardar)
+# --- RECONSTRUCCIÓN DE PARTIDA GUARDADA ---
+func reconstruir_serpiente(historial: Array):
+	es_primer_turno = true # Aseguramos que la mesa inicie virgen
+	
+	for jugada in historial:
+		var v1 = int(jugada["v1"])
+		var v2 = int(jugada["v2"])
+		var lado = jugada["lado"]
+		
+		# 1. Instanciamos la ficha visual (usando el molde de la mano)
+		var nueva_ficha = mano.escena_ficha.instantiate()
+		add_child(nueva_ficha) # La añadimos a la mesa
+		
+		# 2. Le pegamos su textura original
+		var ruta = "%s/%d-%d.png" % [mano.carpeta_imagenes, v1, v2]
+		var tex = load(ruta)
+		if tex: nueva_ficha.setup(v1, v2, tex)
+		
+		# 3. Mandamos a que el Ingeniero la posicione en modo silencioso
+		jugar_ficha(nueva_ficha, lado, false, true)

@@ -128,11 +128,13 @@ func animar_escala(objetivo: Vector2):
 
 # --- INPUT ---
 func _input_event(_viewport, event, _shape_idx):
-	# Si ya está jugada, ignoramos cualquier clic
 	if jugada: return 
 	
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		if event.pressed:
+			# NUEVO: Evita que el clic traspase a otras fichas que estén debajo
+			get_viewport().set_input_as_handled() 
+			
 			arrastrando = true
 			posicion_inicio_click = global_position
 			offset_mouse = get_global_mouse_position() - global_position
@@ -140,19 +142,22 @@ func _input_event(_viewport, event, _shape_idx):
 			
 			empezando_interaccion.emit(self)
 			animar_escala(escala_base * 1.05) 
-# test
+
+# NUEVO: Esta función vigila TODOS los inputs. Asegura que la ficha se suelte
+# incluso si moviste el mouse súper rápido y te saliste de ella.
+func _input(event):
+	if arrastrando and event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and not event.pressed:
+		arrastrando = false
+		z_index = 10 if seleccionado else 0 
+		
+		var distancia = global_position.distance_to(posicion_inicio_click)
+		
+		if distancia < 5.0:
+			click_en_ficha.emit(self)
 		else:
-			arrastrando = false
-			z_index = 10 if seleccionado else 0 
-			
-			var distancia = global_position.distance_to(posicion_inicio_click)
-			
-			if distancia < 5.0:
-				click_en_ficha.emit(self)
-			else:
-				ficha_soltada.emit(self)
-			
-			if not seleccionado:
-				animar_escala(escala_base)
-			else:
-				animar_escala(escala_base * (1 + (aumento_seleccion/100.0)))
+			ficha_soltada.emit(self)
+		
+		if not seleccionado:
+			animar_escala(escala_base)
+		else:
+			animar_escala(escala_base * (1 + (aumento_seleccion/100.0)))

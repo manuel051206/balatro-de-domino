@@ -18,7 +18,7 @@ var ficha_seleccionada_actual: Ficha = null
 var pozo_de_fichas: Array = []
 
 func _ready():
-	generar_mano_inicial()
+	pass # generar_mano_inicial()
 
 # --- GENERACIÓN DE FICHAS ---
 # Limpia la mesa y genera 7 fichas ÚNICAS usando una "bolsa" mezclada.
@@ -126,6 +126,7 @@ func _on_ficha_soltada_drag(ficha: Ficha):
 # --- ROBAR DEL POZO ANIMADO ---
 # Ahora recibe la coordenada desde donde debe salir volando
 func robar_del_pozo(posicion_origen: Vector2):
+	
 	if pozo_de_fichas.is_empty():
 		print("El pozo está vacío.")
 		return 
@@ -194,3 +195,26 @@ func nueva_ronda():
 	organizar_mano()
 	print("Nueva ronda iniciada. Fichas repartidas: ", fichas_a_robar)
 	print("Fichas restantes en el pozo: ", pozo_de_fichas.size())
+
+# --- SISTEMA DE GUARDADO ---
+func obtener_datos_mano() -> Array:
+	var datos = []
+	for ficha in fichas_en_mano:
+		datos.append({"v1": ficha.valor_izq, "v2": ficha.valor_der})
+	return datos
+
+func cargar_estado(fichas_guardadas: Array, pozo_guardado: Array):
+	# 1. Limpiamos cualquier rastro anterior
+	for hijo in get_children():
+		hijo.queue_free()
+	fichas_en_mano.clear()
+	ficha_seleccionada_actual = null
+	
+	# 2. Restauramos el pozo exacto
+	pozo_de_fichas = pozo_guardado.duplicate()
+	
+	# 3. Recreamos las fichas exactas en tu mano
+	for datos in fichas_guardadas:
+		crear_ficha(int(datos["v1"]), int(datos["v2"]))
+		
+	organizar_mano()

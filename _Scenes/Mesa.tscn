@@ -24,6 +24,7 @@ size = Vector2(1074, 415)
 
 [node name="Mesa" type="Node2D" unique_id=1649123061]
 script = ExtResource("1_8bmom")
+modo_debug = false
 Sfx_PonerFicha = SubResource("AudioStreamRandomizer_n8kvq")
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=951271532]
@@ -34,6 +35,7 @@ Sfx_PonerFicha = SubResource("AudioStreamRandomizer_n8kvq")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="ZonaMesa" unique_id=471383918]
 position = Vector2(0, -83.5)
+scale = Vector2(5, 5)
 shape = SubResource("RectangleShape2D_8bmom")
 
 [node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=855013801]
@@ -47,6 +49,13 @@ offset_bottom = 128.0
 theme_override_font_sizes/font_size = 57
 text = "0"
 
+[node name="PuntosManoLabel" type="Label" parent="CanvasLayer" unique_id=914437969]
+offset_left = 13.0
+offset_top = 420.0
+offset_right = 235.0
+offset_bottom = 443.0
+text = "Default(para ver en la scene)"
+
 [node name="ObjetivoLabel" type="Label" parent="CanvasLayer" unique_id=977628547]
 offset_right = 102.0
 offset_bottom = 23.0
@@ -57,9 +66,9 @@ text = "Objetivo: 150"
 anchors_preset = 4
 anchor_top = 0.5
 anchor_bottom = 0.5
-offset_top = -11.5
-offset_right = 40.0
-offset_bottom = 11.5
+offset_top = 116.5
+offset_right = 165.0
+offset_bottom = 161.5
 grow_vertical = 2
 theme_override_font_sizes/font_size = 32
 text = "Ronda: 1/3"

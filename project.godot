@@ -11,9 +11,13 @@ config_version=5
 [application]
 
 config/name="Balatro de domino"
-run/main_scene="uid://k0pv3b6i88b7"
+run/main_scene="uid://db3fv04sek2oy"
 config/features=PackedStringArray("4.6", "Forward Plus")
 config/icon="res://icon.svg"
+
+[autoload]
+
+SaveManager="*uid://dgf177b0y0wb5"
 
 [display]
 

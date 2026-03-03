@@ -1,0 +1,90 @@
+[gd_scene format=3 uid="uid://db3fv04sek2oy"]
+
+[ext_resource type="Script" uid="uid://bxufg5qj6fnsk" path="res://_Scripts/main_menu.gd" id="1_p14ap"]
+
+[node name="MainMenu" type="Control" unique_id=1424149404]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_p14ap")
+
+[node name="Balatro de Domino" type="Label" parent="." unique_id=1285185648]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 23.0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=347142116]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.4652778
+anchor_top = 0.4220679
+anchor_right = 0.5347222
+anchor_bottom = 0.5779321
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="BotonJugar" type="Button" parent="VBoxContainer" unique_id=1968419910]
+layout_mode = 2
+size_flags_vertical = 4
+text = "Jugar"
+
+[node name="BotonOpciones" type="Button" parent="VBoxContainer" unique_id=1624634737]
+layout_mode = 2
+text = "Opciones"
+
+[node name="BotonSalir" type="Button" parent="VBoxContainer" unique_id=1823079505]
+layout_mode = 2
+text = "Salir"
+
+[node name="PanelOpciones" type="Panel" parent="." unique_id=1207625516]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -90.0
+offset_top = -86.0
+offset_right = 84.0
+offset_bottom = 65.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="PanelOpciones" unique_id=686951539]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="TituloOpciones" type="Label" parent="PanelOpciones/VBoxContainer" unique_id=805851371]
+layout_mode = 2
+text = "Configuración"
+horizontal_alignment = 1
+
+[node name="CheckPantalla" type="CheckBox" parent="PanelOpciones/VBoxContainer" unique_id=1116995370]
+layout_mode = 2
+text = "Pantalla Completa"
+
+[node name="LabelVolumen" type="Label" parent="PanelOpciones/VBoxContainer" unique_id=1413742095]
+layout_mode = 2
+text = "Volumen Maestro"
+
+[node name="SliderVolumen" type="HSlider" parent="PanelOpciones/VBoxContainer" unique_id=971545074]
+layout_mode = 2
+max_value = 1.0
+step = 0.01
+value = 1.0
+
+[node name="BotonCerrarOpciones" type="Button" parent="PanelOpciones/VBoxContainer" unique_id=280367996]
+layout_mode = 2
+text = "Volver"
+
+[connection signal="pressed" from="VBoxContainer/BotonJugar" to="." method="_on_boton_jugar_pressed"]
+[connection signal="pressed" from="VBoxContainer/BotonOpciones" to="." method="_on_boton_opciones_pressed"]
+[connection signal="pressed" from="VBoxContainer/BotonSalir" to="." method="_on_boton_salir_pressed"]
+[connection signal="toggled" from="PanelOpciones/VBoxContainer/CheckPantalla" to="." method="_on_check_pantalla_toggled"]
+[connection signal="value_changed" from="PanelOpciones/VBoxContainer/SliderVolumen" to="." method="_on_slider_volumen_value_changed"]
+[connection signal="pressed" from="PanelOpciones/VBoxContainer/BotonCerrarOpciones" to="." method="_on_boton_cerrar_opciones_pressed"]
