@@ -66,7 +66,8 @@ var ruta_ajustes = "user://ajustes_balatrodedomino.json"
 
 var datos_ajustes = {
 	"volumen": 1.0,
-	"pantalla_completa": false
+	"pantalla_completa": false,
+	"modo_debug": false
 }
 func guardar_ajustes():
 	var archivo = FileAccess.open(ruta_ajustes, FileAccess.WRITE)

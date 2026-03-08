@@ -6,6 +6,7 @@ extends Control
 @onready var slider_volumen = $PanelOpciones/VBoxContainer/SliderVolumen
 @onready var check_pantalla = $PanelOpciones/VBoxContainer/CheckPantalla
 @onready var contenedor_botones = $VBoxContainer
+@onready var check_debug = $PanelOpciones/VBoxContainer/CheckDebug
 
 func _ready():
 	# Nos aseguramos de que el panel de opciones esté oculto al iniciar
@@ -18,14 +19,19 @@ func _ready():
 	if SaveManager.cargar_ajustes():
 		var vol = SaveManager.datos_ajustes.get("volumen", 1.0)
 		var fullscreen = SaveManager.datos_ajustes.get("pantalla_completa", false)
+		var debug = SaveManager.datos_ajustes.get("modo_debug", false) # <--- ¡ESTA ES LA LÍNEA QUE FALTABA!
 		
 		# Ajustamos los controles visuales
 		slider_volumen.value = vol
 		check_pantalla.button_pressed = fullscreen
 		
+		if check_debug:
+			check_debug.button_pressed = debug
+		
 		# Forzamos al motor de audio a aplicar el volumen cargado
 		_on_slider_volumen_value_changed(vol)
 	else:
+		boton_jugar.text = "Nueva Partida"
 		boton_jugar.text = "Nueva Partida"
 	
 	# Sincronizamos el CheckBox con el estado actual de la pantalla
@@ -72,3 +78,9 @@ func _on_slider_volumen_value_changed(value: float):
 	# Guardamos el cambio de volumen de inmediato
 	SaveManager.datos_ajustes["volumen"] = value
 	SaveManager.guardar_ajustes()
+
+
+func _on_check_debug_toggled(toggled_on: bool):
+	SaveManager.datos_ajustes["modo_debug"] = toggled_on
+	SaveManager.guardar_ajustes()
+	print("Ajustes de Debug guardados: ", toggled_on)

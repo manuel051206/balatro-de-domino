@@ -25,6 +25,7 @@ size = Vector2(1074, 415)
 [node name="Mesa" type="Node2D" unique_id=1649123061]
 script = ExtResource("1_8bmom")
 modo_debug = false
+puntaje_objetivo_base = 100
 Sfx_PonerFicha = SubResource("AudioStreamRandomizer_n8kvq")
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=951271532]

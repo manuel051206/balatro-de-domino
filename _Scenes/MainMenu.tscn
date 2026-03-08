@@ -47,17 +47,17 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -90.0
-offset_top = -86.0
-offset_right = 84.0
-offset_bottom = 65.0
+offset_left = -93.5
+offset_top = -75.5
+offset_right = 93.5
+offset_bottom = 75.5
 grow_horizontal = 2
 grow_vertical = 2
 
 [node name="VBoxContainer" type="VBoxContainer" parent="PanelOpciones" unique_id=686951539]
 layout_mode = 0
-offset_right = 40.0
-offset_bottom = 40.0
+offset_right = 188.5
+offset_bottom = 189.0
 
 [node name="TituloOpciones" type="Label" parent="PanelOpciones/VBoxContainer" unique_id=805851371]
 layout_mode = 2
@@ -78,6 +78,15 @@ max_value = 1.0
 step = 0.01
 value = 1.0
 
+[node name="CheckDebug" type="CheckBox" parent="PanelOpciones/VBoxContainer" unique_id=3140948]
+layout_mode = 2
+text = "Activar Modo Debug"
+
+[node name="Espaciador" type="Control" parent="PanelOpciones/VBoxContainer" unique_id=1642661265]
+custom_minimum_size = Vector2(0, 10)
+layout_mode = 2
+size_flags_vertical = 2
+
 [node name="BotonCerrarOpciones" type="Button" parent="PanelOpciones/VBoxContainer" unique_id=280367996]
 layout_mode = 2
 text = "Volver"
@@ -87,4 +96,5 @@ text = "Volver"
 [connection signal="pressed" from="VBoxContainer/BotonSalir" to="." method="_on_boton_salir_pressed"]
 [connection signal="toggled" from="PanelOpciones/VBoxContainer/CheckPantalla" to="." method="_on_check_pantalla_toggled"]
 [connection signal="value_changed" from="PanelOpciones/VBoxContainer/SliderVolumen" to="." method="_on_slider_volumen_value_changed"]
+[connection signal="toggled" from="PanelOpciones/VBoxContainer/CheckDebug" to="." method="_on_check_debug_toggled"]
 [connection signal="pressed" from="PanelOpciones/VBoxContainer/BotonCerrarOpciones" to="." method="_on_boton_cerrar_opciones_pressed"]

@@ -171,30 +171,41 @@ func quitar_ficha_jugada(ficha: Ficha):
 	# Reacomodamos la mano para cerrar el hueco que dejó
 	organizar_mano()
 
-# --- NUEVA RONDA (DESCARTAR Y ROBAR) ---
+# --- NUEVA RONDA (RECICLAR Y ROBAR) ---
 func nueva_ronda():
-	# 1. Limpiar las fichas actuales de la mano (descartarlas)
+	# 1. Devolver las fichas sobrantes al pozo antes de destruirlas
 	for ficha in fichas_en_mano:
+		# Rescatamos los valores de la ficha
+		var datos_rescatados = [ficha.valor_izq, ficha.valor_der]
+		pozo_de_fichas.append(datos_rescatados)
+		
+		# Ahora sí, destruimos el nodo visual
 		ficha.queue_free()
+		
 	fichas_en_mano.clear()
 	ficha_seleccionada_actual = null
 	
-	# 2. Calcular cuántas podemos robar (máximo 7, o las que queden en el pozo)
+	print("Fichas recicladas al pozo. Total en pozo antes de robar: ", pozo_de_fichas.size())
+	
+	# 2. Revolvemos el pozo para que todo sea aleatorio de nuevo
+	pozo_de_fichas.shuffle()
+	
+	# 3. Calcular cuántas podemos robar (máximo 7, o las que queden)
 	var fichas_a_robar = min(7, pozo_de_fichas.size())
 	
 	if fichas_a_robar == 0:
 		print("¡No quedan fichas en el pozo para una nueva ronda!")
 		return
 	
-	# 3. Robamos las fichas nuevas
+	# 4. Robamos las fichas nuevas
 	for i in range(fichas_a_robar):
 		var datos = pozo_de_fichas.pop_back()
 		crear_ficha(datos[0], datos[1])
 	
-	# 4. Acomodamos la nueva mano
+	# 5. Acomodamos la nueva mano
 	organizar_mano()
 	print("Nueva ronda iniciada. Fichas repartidas: ", fichas_a_robar)
-	print("Fichas restantes en el pozo: ", pozo_de_fichas.size())
+	print("Fichas restantes en el pozo tras repartir: ", pozo_de_fichas.size())
 
 # --- SISTEMA DE GUARDADO ---
 func obtener_datos_mano() -> Array:

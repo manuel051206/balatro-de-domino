@@ -63,6 +63,8 @@ var nivel_y_der: float = 0.0
 var mouse_sobre_mesa: bool = false
 
 func _ready():
+	if SaveManager.cargar_ajustes():
+		modo_debug = SaveManager.datos_ajustes.get("modo_debug", false)
 	if mano:
 		mano.intento_de_jugada.connect(_validar_jugada)
 	# Intentamos cargar la partida
@@ -140,20 +142,6 @@ func _validar_jugada(ficha: Ficha):
 	if cabe_der:
 		jugar_ficha(ficha, "derecha")
 		return
-	
-# --- SISTEMA ANTI-TRAMPAS ---
-func jugador_tiene_jugada_valida() -> bool:
-	if es_primer_turno: 
-		return true
-		
-	for ficha in mano.fichas_en_mano:
-		var cabe_izq = (ficha.valor_izq == extremo_izquierdo or ficha.valor_der == extremo_izquierdo)
-		var cabe_der = (ficha.valor_izq == extremo_derecho or ficha.valor_der == extremo_derecho)
-		
-		if cabe_izq or cabe_der:
-			return true 
-			
-	return false 
 
 # --- EL GERENTE VISUAL ---
 func jugar_ficha(ficha: Ficha, lado: String, es_capicua: bool = false, es_reconstruccion: bool = false):
@@ -417,10 +405,6 @@ func _on_boton_pozo_pressed():
 	if juego_terminado:
 		return
 	if not modo_debug:
-		if jugador_tiene_jugada_valida():
-			_animar_temblor_boton()
-			return
-			
 		if robos_restantes <= 0:
 			_animar_temblor_boton()
 			return
